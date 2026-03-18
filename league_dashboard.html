@@ -1,0 +1,2368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MTG League Playoff Model</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    background: #0a0a1a;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    padding: 20px;
+}
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.header {
+    text-align: center;
+    padding: 24px 0 0;
+    margin-bottom: 24px;
+}
+.header-top {
+    margin-bottom: 4px;
+}
+.header h1 {
+    font-size: 1.8em;
+    color: #e94560;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+.league-display-name {
+    font-size: 1em;
+    color: #666;
+    font-style: italic;
+    margin-bottom: 4px;
+}
+.header .subtitle {
+    color: #888;
+    font-size: 0.85em;
+}
+.nav-links {
+    display: inline-flex;
+    gap: 4px;
+    margin: 16px 0 24px;
+    padding: 4px;
+    background: #0f3460;
+    border-radius: 10px;
+}
+.nav-links a {
+    color: #888;
+    text-decoration: none;
+    padding: 7px 18px;
+    border-radius: 7px;
+    font-size: 0.82em;
+    font-weight: 500;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+}
+.nav-links a:hover {
+    color: #e0e0e0;
+    background: rgba(255,255,255,0.06);
+}
+.nav-links a.active {
+    background: #e94560;
+    color: #fff;
+    font-weight: 600;
+}
+.card {
+    background: #16213e;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid #0f3460;
+}
+.card h2 {
+    color: #e94560;
+    font-size: 1.3em;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #0f3460;
+}
+/* Standings Table */
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+.standings-table th {
+    background: #0f3460;
+    color: #e0e0e0;
+    padding: 10px 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.standings-table td {
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid #1a1a2e;
+}
+.standings-table tr:hover {
+    background: rgba(233,69,96,0.06);
+}
+.standings-table tr.top4 {
+    background: rgba(46, 204, 113, 0.08);
+}
+.standings-table tr.top4:hover {
+    background: rgba(46, 204, 113, 0.15);
+}
+.standings-table tr.unofficial {
+    opacity: 0.45;
+}
+.rank {
+    font-weight: bold;
+    color: #888;
+    width: 40px;
+}
+.player-name {
+    text-align: left !important;
+    font-weight: 600;
+    color: #f0f0f0;
+    white-space: nowrap;
+}
+.best7 {
+    font-weight: bold;
+    color: #2ecc71;
+    font-size: 1.05em;
+}
+.total-pts {
+    color: #aaa;
+}
+.omw-col {
+    color: #aaa;
+    font-size: 0.9em;
+}
+.defending-champ {
+    color: #f1c40f !important;
+}
+.score-max { color: #2ecc71; font-weight: bold; }
+.score-high { color: #a8d8a8; }
+.score-mid { color: #ccc; }
+.score-low { color: #e74c3c; }
+.score-absent { color: #555; }
+.score-future { color: #333; }
+.week-header.future { color: #555; }
+.week-header.active { color: #ccc; }
+.week-header.clickable { cursor: pointer; position: relative; }
+.week-header.clickable:hover { color: #e94560; background: #1a2744; }
+.week-header.clickable.selected { color: #e94560; border-bottom: 2px solid #e94560; }
+
+/* Week Detail Panels */
+.week-detail-panel {
+    margin-bottom: 24px;
+}
+.wd-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #0f3460;
+}
+.wd-header h2 {
+    color: #e94560;
+    font-size: 1.3em;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+.wd-content {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+.wd-rounds {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.wd-round {
+    flex: 1;
+    min-width: 200px;
+}
+.wd-round h4 {
+    color: #e94560;
+    font-size: 0.9em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.wd-standings {
+    min-width: 280px;
+}
+.wd-standings h4 {
+    color: #e94560;
+    font-size: 0.9em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.wd-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+}
+.wd-table th {
+    background: #0f3460;
+    color: #aaa;
+    padding: 6px 10px;
+    text-align: center;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+.wd-table td {
+    padding: 6px 10px;
+    text-align: center;
+    border-bottom: 1px solid rgba(15,52,96,0.5);
+    color: #ccc;
+}
+.wd-player { font-weight: 600; color: #e0e0e0; text-align: left !important; }
+.wd-pos { color: #888; width: 30px; }
+.wd-pts { font-weight: 700; color: #2ecc71; }
+.wd-score { font-weight: 600; white-space: nowrap; }
+.result-win { color: #2ecc71; }
+.result-loss { color: #e74c3c; }
+.result-draw { color: #f1c40f; }
+.wd-standings-table td { text-align: center; }
+.wd-standings-table td.wd-player { text-align: left !important; }
+/* Probability Cards */
+.prob-grid {
+    display: grid;
+    gap: 12px;
+}
+.prob-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    padding: 14px 18px;
+}
+.prob-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.prob-player {
+    font-weight: 700;
+    font-size: 1.05em;
+    min-width: 140px;
+}
+.prob-pct {
+    font-weight: 700;
+    font-size: 1.1em;
+    min-width: 60px;
+}
+.badge {
+    font-size: 0.7em;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.badge.clinched {
+    background: #2ecc71;
+    color: #1a1a2e;
+}
+.badge.eliminated {
+    background: #e74c3c;
+    color: #fff;
+}
+.prob-bar-bg {
+    background: #0f3460;
+    border-radius: 6px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+.prob-bar {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+    min-width: 3px;
+}
+.prob-details {
+    display: flex;
+    gap: 20px;
+    font-size: 0.82em;
+    color: #888;
+}
+/* Insights */
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+.insight-card {
+    background: #1a1a2e;
+    border-top: 3px solid #e94560;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+}
+.insight-title {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #e94560;
+    margin-bottom: 8px;
+}
+.insight-player {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #e0e0e0;
+    margin-bottom: 4px;
+}
+.insight-value {
+    font-size: 1.6em;
+    font-weight: 700;
+    color: #2ecc71;
+    margin-bottom: 4px;
+}
+.insight-detail {
+    font-size: 0.78em;
+    color: #888;
+}
+.insight-item {
+    background: #1a1a2e;
+    border-left: 3px solid #e94560;
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.92em;
+    line-height: 1.5;
+}
+/* Methodology */
+.methodology {
+    font-size: 0.82em;
+    color: #666;
+    line-height: 1.7;
+    padding: 16px;
+    background: #12122a;
+    border-radius: 8px;
+}
+.methodology h3 {
+    color: #888;
+    margin-bottom: 8px;
+    font-size: 1em;
+}
+.top4-marker {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #2ecc71;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+/* Responsive: make standings table horizontally scrollable */
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -4px;
+    padding: 0 4px;
+}
+
+@media (max-width: 768px) {
+    body { padding: 10px; }
+    .header h1 { font-size: 1.3em; }
+    .header .subtitle { font-size: 0.75em; }
+    .nav-links { gap: 2px; padding: 3px; }
+    .nav-links a { font-size: 0.75em; padding: 6px 10px; }
+    .league-selector { gap: 8px; }
+    .league-selector select { min-width: 160px; font-size: 0.82em; padding: 6px 10px; }
+    .league-actions { gap: 4px; }
+    .league-action-btn { font-size: 0.72em; padding: 5px 10px; }
+    .card { padding: 14px; margin-bottom: 16px; }
+    .card h2 { font-size: 1.1em; }
+
+    /* Standings table */
+    .standings-table { font-size: 0.78em; }
+    .standings-table th { padding: 6px 4px; font-size: 0.75em; }
+    .standings-table td { padding: 5px 4px; }
+    .player-name { max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Prob cards */
+    .prob-header { flex-wrap: wrap; gap: 6px; }
+    .prob-player { min-width: auto; font-size: 0.95em; }
+    .prob-pct { min-width: auto; }
+    .prob-details { flex-wrap: wrap; gap: 8px 14px; font-size: 0.78em; }
+
+    /* Charts */
+    .card canvas { min-height: 280px; }
+
+    /* Week detail panels */
+    .wd-content { flex-direction: column; gap: 16px; }
+    .wd-rounds { flex-direction: column; gap: 12px; min-width: auto; }
+    .wd-round { min-width: auto; }
+    .wd-standings { min-width: auto; }
+    .wd-table { font-size: 0.8em; }
+    .wd-table td { padding: 5px 6px; }
+
+    /* Modal */
+    .modal-content { max-width: 100%; margin: 10px; }
+    .matchup-row { gap: 4px; }
+    .player-select { min-width: 110px; font-size: 0.82em; }
+    .games-select { width: 42px; font-size: 0.82em; }
+}
+
+@media (max-width: 480px) {
+    body { padding: 6px; }
+    .header h1 { font-size: 1.1em; }
+    .header .subtitle { font-size: 0.72em; }
+    .nav-links a { font-size: 0.7em; padding: 5px 8px; }
+    .league-selector { flex-direction: column; gap: 6px; }
+    .league-selector select { min-width: auto; width: 100%; }
+    .league-actions { justify-content: center; }
+    .card { padding: 10px; border-radius: 8px; }
+    .standings-table th { padding: 4px 2px; font-size: 0.7em; }
+    .standings-table td { padding: 4px 2px; font-size: 0.72em; }
+    .player-name { max-width: 70px; }
+    .prob-details { font-size: 0.72em; }
+    .badge { font-size: 0.6em; padding: 2px 6px; }
+}
+/* Playoff Bracket */
+.bracket-projected {
+    opacity: 0.7;
+    border-style: dashed;
+}
+.bracket-container {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    padding: 20px 0;
+}
+.bracket-round {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.bracket-round-title {
+    color: #888;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-align: center;
+}
+.bracket-semis {
+    gap: 40px;
+}
+.bracket-match {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    overflow: hidden;
+    min-width: 200px;
+    position: relative;
+}
+.bracket-match-label {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 0.65em;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.bracket-slot {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    gap: 8px;
+    border-bottom: 1px solid #0f3460;
+    transition: background 0.2s;
+}
+.bracket-slot:last-child {
+    border-bottom: none;
+}
+.bracket-seed {
+    color: #888;
+    font-size: 0.8em;
+    font-weight: 600;
+    min-width: 20px;
+}
+.bracket-name {
+    font-weight: 600;
+    flex: 1;
+    color: #e0e0e0;
+}
+.bracket-score {
+    font-weight: 700;
+    color: #aaa;
+    min-width: 16px;
+    text-align: right;
+}
+.bracket-winner {
+    background: rgba(46, 204, 113, 0.12);
+}
+.bracket-winner .bracket-name {
+    color: #2ecc71;
+}
+.bracket-winner .bracket-score {
+    color: #2ecc71;
+}
+.bracket-loser {
+    opacity: 0.5;
+}
+.bracket-connector-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    position: relative;
+    align-self: stretch;
+}
+.bracket-connector-top,
+.bracket-connector-bottom {
+    flex: 1;
+    width: 20px;
+    position: relative;
+}
+.bracket-connector-top {
+    border-right: 2px solid #0f3460;
+    border-top: 2px solid #0f3460;
+    margin-top: 30px;
+    border-top-right-radius: 6px;
+}
+.bracket-connector-bottom {
+    border-right: 2px solid #0f3460;
+    border-bottom: 2px solid #0f3460;
+    margin-bottom: 30px;
+    border-bottom-right-radius: 6px;
+}
+.bracket-final {
+    justify-content: center;
+}
+.bracket-champion-col {
+    display: flex;
+    align-items: center;
+    padding-left: 20px;
+}
+.bracket-champion-slot {
+    font-size: 1.3em;
+    font-weight: 800;
+    color: #555;
+    padding: 16px 20px;
+    border-radius: 8px;
+    min-width: 100px;
+    text-align: center;
+}
+.bracket-champion-slot.bracket-winner {
+    color: #2ecc71;
+    background: rgba(46, 204, 113, 0.1);
+    border: 2px solid #2ecc71;
+}
+.bracket-third-place {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #0f3460;
+    max-width: 280px;
+}
+.bracket-third-place .bracket-match {
+    margin-top: 8px;
+}
+.bracket-result {
+    text-align: center;
+    padding: 8px;
+    font-size: 0.85em;
+    color: #888;
+    font-weight: 600;
+}
+/* Champion Banner */
+.champion-banner {
+    text-align: center;
+    padding: 24px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.08), rgba(233, 69, 96, 0.08));
+    border-radius: 12px;
+    border: 2px solid #2ecc71;
+}
+.champion-trophy {
+    font-size: 3em;
+    margin-bottom: 8px;
+}
+.champion-name {
+    font-size: 2em;
+    font-weight: 800;
+    color: #2ecc71;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+.champion-label {
+    font-size: 1em;
+    color: #888;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+/* Awards */
+.awards-section {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #0f3460;
+    justify-content: center;
+}
+.award-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 10px;
+    padding: 20px 28px;
+    text-align: center;
+    min-width: 200px;
+    flex: 1;
+    max-width: 300px;
+}
+.award-champion {
+    border-color: #2ecc71;
+}
+.award-mvp {
+    border-color: #f1c40f;
+}
+.award-icon {
+    font-size: 2em;
+    margin-bottom: 8px;
+}
+.award-title {
+    font-size: 0.85em;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+.award-player {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #e0e0e0;
+}
+.award-champion .award-player {
+    color: #2ecc71;
+}
+.award-mvp .award-player {
+    color: #f1c40f;
+}
+.award-note {
+    width: 100%;
+    text-align: center;
+    color: #2ecc71;
+    font-weight: 600;
+    font-size: 1.1em;
+    padding: 8px;
+}
+
+@media (max-width: 768px) {
+    .bracket-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .bracket-connector-col {
+        display: none;
+    }
+    .bracket-champion-col {
+        padding-left: 0;
+        justify-content: center;
+    }
+    .bracket-match {
+        min-width: auto;
+    }
+    .bracket-semis {
+        gap: 16px;
+    }
+    .bracket-third-place {
+        max-width: 100%;
+    }
+    .awards-section {
+        flex-direction: column;
+        align-items: center;
+    }
+    .award-card {
+        max-width: 100%;
+        width: 100%;
+    }
+    .champion-name {
+        font-size: 1.4em;
+    }
+}
+
+@media (max-width: 480px) {
+    .bracket-slot {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+    .champion-name {
+        font-size: 1.2em;
+    }
+    .champion-trophy {
+        font-size: 2em;
+    }
+}
+
+
+.completed-badge {
+    background: #2ecc71;
+    color: #1a1a2e;
+    font-size: 0.4em;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    vertical-align: middle;
+    margin-left: 10px;
+}
+.completed-banner {
+    text-align: center;
+    margin-bottom: 24px;
+}
+.completed-banner-inner {
+    display: inline-block;
+    background: rgba(46, 204, 113, 0.1);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    color: #2ecc71;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+    <div class="header-top">
+        <div class="header-title">
+            <h1>2026 Season 1 </h1>
+            <div class="league-display-name">Lorwyn League</div>
+            <div class="subtitle">Week 6/10 &middot; Best 7 of 10 &middot; Top 4 qualify</div>
+        </div>
+    </div>
+    
+    <nav class="nav-links">
+        <a href="/" class="active">League</a>
+        <a href="/cumulative">Cumulative 2026</a>
+        <a href="/all-time">All-Time</a>
+        <a href="/head-to-head">Head-to-Head</a>
+    </nav>
+</div>
+
+
+
+
+
+<div class="card">
+    <h2>Current Standings</h2>
+    <div class="table-wrapper">
+    <table class="standings-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th style="text-align:left">Player</th>
+                <th class="week-header active clickable" onclick="toggleWeekDetail(1)" title="Click to view Week 1 details">W1</th><th class="week-header active clickable" onclick="toggleWeekDetail(2)" title="Click to view Week 2 details">W2</th><th class="week-header active clickable" onclick="toggleWeekDetail(3)" title="Click to view Week 3 details">W3</th><th class="week-header active clickable" onclick="toggleWeekDetail(4)" title="Click to view Week 4 details">W4</th><th class="week-header active clickable" onclick="toggleWeekDetail(5)" title="Click to view Week 5 details">W5</th><th class="week-header active clickable" onclick="toggleWeekDetail(6)" title="Click to view Week 6 details">W6</th><th class="week-header future">W7</th><th class="week-header future">W8</th><th class="week-header future">W9</th><th class="week-header future">W10</th>
+                <th>Best 7</th>
+                <th>Total</th>
+                <th>OMW%</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+        <tr class="top4">
+            <td class="rank">1</td>
+            <td class="player-name">Dom</td>
+            <td class="score-max">9</td><td class="score-high">6</td><td class="score-max">9</td><td class="score-max">9</td><td class="score-absent">-</td><td class="score-low">0</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">33</td>
+            <td class="total-pts">33</td>
+            <td class="omw-col">57.8%</td>
+        </tr>
+        <tr class="top4">
+            <td class="rank">2</td>
+            <td class="player-name defending-champ">Sami</td>
+            <td class="score-high">6</td><td class="score-mid">3</td><td class="score-max">9</td><td class="score-high">6</td><td class="score-mid">3</td><td class="score-high">6</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">33</td>
+            <td class="total-pts">33</td>
+            <td class="omw-col">53.4%</td>
+        </tr>
+        <tr class="top4">
+            <td class="rank">3</td>
+            <td class="player-name">Alex</td>
+            <td class="score-mid">3</td><td class="score-high">6</td><td class="score-high">6</td><td class="score-mid">4</td><td class="score-max">9</td><td class="score-absent">-</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">28</td>
+            <td class="total-pts">28</td>
+            <td class="omw-col">54.8%</td>
+        </tr>
+        <tr class="top4">
+            <td class="rank">4</td>
+            <td class="player-name">Derek</td>
+            <td class="score-absent">-</td><td class="score-max">9</td><td class="score-high">6</td><td class="score-high">6</td><td class="score-mid">3</td><td class="score-mid">3</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">27</td>
+            <td class="total-pts">27</td>
+            <td class="omw-col">51.1%</td>
+        </tr>
+        <tr class="">
+            <td class="rank">5</td>
+            <td class="player-name">Roland</td>
+            <td class="score-high">6</td><td class="score-mid">4</td><td class="score-high">6</td><td class="score-mid">5</td><td class="score-mid">3</td><td class="score-absent">-</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">24</td>
+            <td class="total-pts">24</td>
+            <td class="omw-col">53.3%</td>
+        </tr>
+        <tr class="">
+            <td class="rank">6</td>
+            <td class="player-name">Brandon</td>
+            <td class="score-absent">-</td><td class="score-low">0</td><td class="score-mid">3</td><td class="score-mid">4</td><td class="score-high">6</td><td class="score-max">9</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">22</td>
+            <td class="total-pts">22</td>
+            <td class="omw-col">60.0%</td>
+        </tr>
+        <tr class="">
+            <td class="rank">7</td>
+            <td class="player-name">Martin</td>
+            <td class="score-mid">3</td><td class="score-mid">3</td><td class="score-mid">3</td><td class="score-mid">3</td><td class="score-absent">-</td><td class="score-high">6</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">18</td>
+            <td class="total-pts">18</td>
+            <td class="omw-col">63.7%</td>
+        </tr>
+        <tr class="">
+            <td class="rank">8</td>
+            <td class="player-name">Georgia</td>
+            <td class="score-low">0</td><td class="score-absent">-</td><td class="score-mid">3</td><td class="score-mid">3</td><td class="score-mid">3</td><td class="score-mid">4</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">13</td>
+            <td class="total-pts">13</td>
+            <td class="omw-col">64.1%</td>
+        </tr>
+        <tr class="">
+            <td class="rank">9</td>
+            <td class="player-name">Liam</td>
+            <td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-max">9</td><td class="score-mid">4</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">13</td>
+            <td class="total-pts">13</td>
+            <td class="omw-col">41.7%</td>
+        </tr>
+        <tr class="">
+            <td class="rank">10</td>
+            <td class="player-name">Stephen</td>
+            <td class="score-high">6</td><td class="score-absent">-</td><td class="score-low">0</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-high">6</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">12</td>
+            <td class="total-pts">12</td>
+            <td class="omw-col">60.5%</td>
+        </tr>
+        <tr class="">
+            <td class="rank">11</td>
+            <td class="player-name">Josh</td>
+            <td class="score-mid">3</td><td class="score-mid">4</td><td class="score-absent">-</td><td class="score-mid">3</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">10</td>
+            <td class="total-pts">10</td>
+            <td class="omw-col">60.5%</td>
+        </tr>
+        <tr class="">
+            <td class="rank">12</td>
+            <td class="player-name">Vasudef</td>
+            <td class="score-high">6</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-mid">3</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">9</td>
+            <td class="total-pts">9</td>
+            <td class="omw-col">55.6%</td>
+        </tr>
+        <tr class="">
+            <td class="rank">13</td>
+            <td class="player-name">Dan (Bristol)</td>
+            <td class="score-high">6</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">6</td>
+            <td class="total-pts">6</td>
+            <td class="omw-col">66.7%</td>
+        </tr>
+        <tr class="">
+            <td class="rank">14</td>
+            <td class="player-name">Roman</td>
+            <td class="score-high">6</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">6</td>
+            <td class="total-pts">6</td>
+            <td class="omw-col">66.7%</td>
+        </tr>
+        <tr class="">
+            <td class="rank">15</td>
+            <td class="player-name">Kenic</td>
+            <td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-high">6</td><td class="score-absent">-</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">6</td>
+            <td class="total-pts">6</td>
+            <td class="omw-col">55.6%</td>
+        </tr>
+        <tr class="">
+            <td class="rank">16</td>
+            <td class="player-name">Dan</td>
+            <td class="score-absent">-</td><td class="score-absent">-</td><td class="score-absent">-</td><td class="score-low">0</td><td class="score-mid">3</td><td class="score-absent">-</td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td><td class="score-future"></td>
+            <td class="best7">3</td>
+            <td class="total-pts">3</td>
+            <td class="omw-col">35.2%</td>
+        </tr>
+        </tbody>
+    </table>
+    </div>
+    <div style="margin-top: 10px; font-size: 0.8em; color: #555;">
+        <span class="top4-marker"></span> Top 4 qualify for playoffs &middot; Best 7 of 10 weekly scores count
+        &middot; Click a week header to view match details
+        
+    </div>
+</div>
+
+
+        <div id="weekDetail-1" class="week-detail-panel" style="display:none;">
+            <div class="card" style="margin-top:0;">
+                <div class="wd-header">
+                    <h2>Week 1 Results</h2>
+                    <button class="modal-close" onclick="toggleWeekDetail(1)">&times;</button>
+                </div>
+                <div class="wd-content">
+                    <div class="wd-rounds"><div class="wd-round">
+                <h4>Round 1</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Dom</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Dan (Bristol)</td>
+                </tr><tr>
+                    <td class="wd-player">Sami</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Alex</td>
+                </tr><tr>
+                    <td class="wd-player">Roland</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Stephen</td>
+                </tr><tr>
+                    <td class="wd-player">Roman</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Martin</td>
+                </tr><tr>
+                    <td class="wd-player">Vasudef</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Georgia</td>
+                </tr><tr>
+                    <td class="wd-player">Josh</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">BYE</td>
+                </tr></table>
+            </div><div class="wd-round">
+                <h4>Round 2</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Dom</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Roman</td>
+                </tr><tr>
+                    <td class="wd-player">Sami</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Vasudef</td>
+                </tr><tr>
+                    <td class="wd-player">Alex</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Georgia</td>
+                </tr><tr>
+                    <td class="wd-player">Roland</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Josh</td>
+                </tr><tr>
+                    <td class="wd-player">Stephen</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Martin</td>
+                </tr><tr>
+                    <td class="wd-player">Dan (Bristol)</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">BYE</td>
+                </tr></table>
+            </div><div class="wd-round">
+                <h4>Round 3</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Dom</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Sami</td>
+                </tr><tr>
+                    <td class="wd-player">Vasudef</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Alex</td>
+                </tr><tr>
+                    <td class="wd-player">Roman</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Roland</td>
+                </tr><tr>
+                    <td class="wd-player">Stephen</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Georgia</td>
+                </tr><tr>
+                    <td class="wd-player">Dan (Bristol)</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Josh</td>
+                </tr><tr>
+                    <td class="wd-player">Martin</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">BYE</td>
+                </tr></table>
+            </div></div>
+                    <div class="wd-standings">
+                        <h4>Standings</h4>
+                        <table class="wd-table wd-standings-table">
+                            <thead><tr>
+                                <th>#</th><th>Player</th><th>Record</th><th>Pts</th><th>OMW%</th>
+                            </tr></thead>
+                            <tbody><tr>
+                <td class="wd-pos">1</td>
+                <td class="wd-player">Dom</td>
+                <td>3-0-0</td>
+                <td class="wd-pts">9</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">2</td>
+                <td class="wd-player">Roman</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">3</td>
+                <td class="wd-player">Sami</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">4</td>
+                <td class="wd-player">Dan (Bristol)</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">5</td>
+                <td class="wd-player">Roland</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>55.6%</td>
+            </tr><tr>
+                <td class="wd-pos">6</td>
+                <td class="wd-player">Vasudef</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>44.4%</td>
+            </tr><tr>
+                <td class="wd-pos">7</td>
+                <td class="wd-player">Stephen</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>44.4%</td>
+            </tr><tr>
+                <td class="wd-pos">8</td>
+                <td class="wd-player">Martin</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">9</td>
+                <td class="wd-player">Josh</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">10</td>
+                <td class="wd-player">Alex</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>55.6%</td>
+            </tr><tr>
+                <td class="wd-pos">11</td>
+                <td class="wd-player">Georgia</td>
+                <td>0-3-0</td>
+                <td class="wd-pts">0</td>
+                <td>55.6%</td>
+            </tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        <div id="weekDetail-2" class="week-detail-panel" style="display:none;">
+            <div class="card" style="margin-top:0;">
+                <div class="wd-header">
+                    <h2>Week 2 Results</h2>
+                    <button class="modal-close" onclick="toggleWeekDetail(2)">&times;</button>
+                </div>
+                <div class="wd-content">
+                    <div class="wd-rounds"><div class="wd-round">
+                <h4>Round 1</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Derek</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Dom</td>
+                </tr><tr>
+                    <td class="wd-player">Alex</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Sami</td>
+                </tr><tr>
+                    <td class="wd-player">Martin</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Roland</td>
+                </tr><tr>
+                    <td class="wd-player">Josh</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Brandon</td>
+                </tr></table>
+            </div><div class="wd-round">
+                <h4>Round 2</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Dom</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Brandon</td>
+                </tr><tr>
+                    <td class="wd-player">Roland</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Sami</td>
+                </tr><tr>
+                    <td class="wd-player">Alex</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Martin</td>
+                </tr><tr>
+                    <td class="wd-player">Derek</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Josh</td>
+                </tr></table>
+            </div><div class="wd-round">
+                <h4>Round 3</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Dom</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Martin</td>
+                </tr><tr>
+                    <td class="wd-player">Sami</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Brandon</td>
+                </tr><tr>
+                    <td class="wd-player">Derek</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Alex</td>
+                </tr><tr>
+                    <td class="wd-player">Josh</td>
+                    <td class="wd-score result-draw">1 - 1</td>
+                    <td class="wd-player">Roland</td>
+                </tr></table>
+            </div></div>
+                    <div class="wd-standings">
+                        <h4>Standings</h4>
+                        <table class="wd-table wd-standings-table">
+                            <thead><tr>
+                                <th>#</th><th>Player</th><th>Record</th><th>Pts</th><th>OMW%</th>
+                            </tr></thead>
+                            <tbody><tr>
+                <td class="wd-pos">1</td>
+                <td class="wd-player">Derek</td>
+                <td>3-0-0</td>
+                <td class="wd-pts">9</td>
+                <td>59.3%</td>
+            </tr><tr>
+                <td class="wd-pos">2</td>
+                <td class="wd-player">Alex</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>55.6%</td>
+            </tr><tr>
+                <td class="wd-pos">3</td>
+                <td class="wd-player">Dom</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>55.6%</td>
+            </tr><tr>
+                <td class="wd-pos">4</td>
+                <td class="wd-player">Josh</td>
+                <td>1-1-1</td>
+                <td class="wd-pts">4</td>
+                <td>59.3%</td>
+            </tr><tr>
+                <td class="wd-pos">5</td>
+                <td class="wd-player">Roland</td>
+                <td>1-1-1</td>
+                <td class="wd-pts">4</td>
+                <td>37.0%</td>
+            </tr><tr>
+                <td class="wd-pos">6</td>
+                <td class="wd-player">Martin</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>59.3%</td>
+            </tr><tr>
+                <td class="wd-pos">7</td>
+                <td class="wd-player">Sami</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>48.1%</td>
+            </tr><tr>
+                <td class="wd-pos">8</td>
+                <td class="wd-player">Brandon</td>
+                <td>0-3-0</td>
+                <td class="wd-pts">0</td>
+                <td>48.1%</td>
+            </tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        <div id="weekDetail-3" class="week-detail-panel" style="display:none;">
+            <div class="card" style="margin-top:0;">
+                <div class="wd-header">
+                    <h2>Week 3 Results</h2>
+                    <button class="modal-close" onclick="toggleWeekDetail(3)">&times;</button>
+                </div>
+                <div class="wd-content">
+                    <div class="wd-rounds"><div class="wd-round">
+                <h4>Round 1</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Dom</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Alex</td>
+                </tr><tr>
+                    <td class="wd-player">Sami</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Stephen</td>
+                </tr><tr>
+                    <td class="wd-player">Martin</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Derek</td>
+                </tr><tr>
+                    <td class="wd-player">Roland</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Brandon</td>
+                </tr><tr>
+                    <td class="wd-player">Georgia</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">BYE</td>
+                </tr></table>
+            </div><div class="wd-round">
+                <h4>Round 2</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Dom</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Georgia</td>
+                </tr><tr>
+                    <td class="wd-player">Sami</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Martin</td>
+                </tr><tr>
+                    <td class="wd-player">Alex</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Brandon</td>
+                </tr><tr>
+                    <td class="wd-player">Roland</td>
+                    <td class="wd-score result-win">1 - 0</td>
+                    <td class="wd-player">Stephen</td>
+                </tr><tr>
+                    <td class="wd-player">Derek</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">BYE</td>
+                </tr></table>
+            </div><div class="wd-round">
+                <h4>Round 3</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Dom</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Martin</td>
+                </tr><tr>
+                    <td class="wd-player">Sami</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Roland</td>
+                </tr><tr>
+                    <td class="wd-player">Alex</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Georgia</td>
+                </tr><tr>
+                    <td class="wd-player">Derek</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Stephen</td>
+                </tr><tr>
+                    <td class="wd-player">Brandon</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">BYE</td>
+                </tr></table>
+            </div></div>
+                    <div class="wd-standings">
+                        <h4>Standings</h4>
+                        <table class="wd-table wd-standings-table">
+                            <thead><tr>
+                                <th>#</th><th>Player</th><th>Record</th><th>Pts</th><th>OMW%</th>
+                            </tr></thead>
+                            <tbody><tr>
+                <td class="wd-pos">1</td>
+                <td class="wd-player">Sami</td>
+                <td>3-0-0</td>
+                <td class="wd-pts">9</td>
+                <td>44.4%</td>
+            </tr><tr>
+                <td class="wd-pos">2</td>
+                <td class="wd-player">Dom</td>
+                <td>3-0-0</td>
+                <td class="wd-pts">9</td>
+                <td>44.4%</td>
+            </tr><tr>
+                <td class="wd-pos">3</td>
+                <td class="wd-player">Roland</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>55.6%</td>
+            </tr><tr>
+                <td class="wd-pos">4</td>
+                <td class="wd-player">Alex</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>55.6%</td>
+            </tr><tr>
+                <td class="wd-pos">5</td>
+                <td class="wd-player">Derek</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>33.3%</td>
+            </tr><tr>
+                <td class="wd-pos">6</td>
+                <td class="wd-player">Martin</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>88.9%</td>
+            </tr><tr>
+                <td class="wd-pos">7</td>
+                <td class="wd-player">Georgia</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>83.3%</td>
+            </tr><tr>
+                <td class="wd-pos">8</td>
+                <td class="wd-player">Brandon</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">9</td>
+                <td class="wd-player">Stephen</td>
+                <td>0-3-0</td>
+                <td class="wd-pts">0</td>
+                <td>77.8%</td>
+            </tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        <div id="weekDetail-4" class="week-detail-panel" style="display:none;">
+            <div class="card" style="margin-top:0;">
+                <div class="wd-header">
+                    <h2>Week 4 Results</h2>
+                    <button class="modal-close" onclick="toggleWeekDetail(4)">&times;</button>
+                </div>
+                <div class="wd-content">
+                    <div class="wd-rounds"><div class="wd-round">
+                <h4>Round 1</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Dom</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Brandon</td>
+                </tr><tr>
+                    <td class="wd-player">Sami</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Josh</td>
+                </tr><tr>
+                    <td class="wd-player">Alex</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Martin</td>
+                </tr><tr>
+                    <td class="wd-player">Roland</td>
+                    <td class="wd-score result-win">1 - 0</td>
+                    <td class="wd-player">Derek</td>
+                </tr><tr>
+                    <td class="wd-player">Georgia</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Dan</td>
+                </tr></table>
+            </div><div class="wd-round">
+                <h4>Round 2</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Dom</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Sami</td>
+                </tr><tr>
+                    <td class="wd-player">Alex</td>
+                    <td class="wd-score result-draw">1 - 1</td>
+                    <td class="wd-player">Roland</td>
+                </tr><tr>
+                    <td class="wd-player">Derek</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Josh</td>
+                </tr><tr>
+                    <td class="wd-player">Brandon</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Dan</td>
+                </tr><tr>
+                    <td class="wd-player">Martin</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Georgia</td>
+                </tr></table>
+            </div><div class="wd-round">
+                <h4>Round 3</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Dom</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Alex</td>
+                </tr><tr>
+                    <td class="wd-player">Sami</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Georgia</td>
+                </tr><tr>
+                    <td class="wd-player">Derek</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Martin</td>
+                </tr><tr>
+                    <td class="wd-player">Roland</td>
+                    <td class="wd-score result-draw">1 - 1</td>
+                    <td class="wd-player">Brandon</td>
+                </tr><tr>
+                    <td class="wd-player">Josh</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Dan</td>
+                </tr></table>
+            </div></div>
+                    <div class="wd-standings">
+                        <h4>Standings</h4>
+                        <table class="wd-table wd-standings-table">
+                            <thead><tr>
+                                <th>#</th><th>Player</th><th>Record</th><th>Pts</th><th>OMW%</th>
+                            </tr></thead>
+                            <tbody><tr>
+                <td class="wd-pos">1</td>
+                <td class="wd-player">Dom</td>
+                <td>3-0-0</td>
+                <td class="wd-pts">9</td>
+                <td>51.9%</td>
+            </tr><tr>
+                <td class="wd-pos">2</td>
+                <td class="wd-player">Sami</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>55.6%</td>
+            </tr><tr>
+                <td class="wd-pos">3</td>
+                <td class="wd-player">Derek</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>40.7%</td>
+            </tr><tr>
+                <td class="wd-pos">4</td>
+                <td class="wd-player">Roland</td>
+                <td>1-0-2</td>
+                <td class="wd-pts">5</td>
+                <td>51.9%</td>
+            </tr><tr>
+                <td class="wd-pos">5</td>
+                <td class="wd-player">Brandon</td>
+                <td>1-1-1</td>
+                <td class="wd-pts">4</td>
+                <td>63.0%</td>
+            </tr><tr>
+                <td class="wd-pos">6</td>
+                <td class="wd-player">Alex</td>
+                <td>1-1-1</td>
+                <td class="wd-pts">4</td>
+                <td>63.0%</td>
+            </tr><tr>
+                <td class="wd-pos">7</td>
+                <td class="wd-player">Josh</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>55.6%</td>
+            </tr><tr>
+                <td class="wd-pos">8</td>
+                <td class="wd-player">Martin</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>48.1%</td>
+            </tr><tr>
+                <td class="wd-pos">9</td>
+                <td class="wd-player">Georgia</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>44.4%</td>
+            </tr><tr>
+                <td class="wd-pos">10</td>
+                <td class="wd-player">Dan</td>
+                <td>0-3-0</td>
+                <td class="wd-pts">0</td>
+                <td>37.0%</td>
+            </tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        <div id="weekDetail-5" class="week-detail-panel" style="display:none;">
+            <div class="card" style="margin-top:0;">
+                <div class="wd-header">
+                    <h2>Week 5 Results</h2>
+                    <button class="modal-close" onclick="toggleWeekDetail(5)">&times;</button>
+                </div>
+                <div class="wd-content">
+                    <div class="wd-rounds"><div class="wd-round">
+                <h4>Round 1</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Roland</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Sami</td>
+                </tr><tr>
+                    <td class="wd-player">Alex</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Kenic</td>
+                </tr><tr>
+                    <td class="wd-player">Derek</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Dan</td>
+                </tr><tr>
+                    <td class="wd-player">Liam</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Georgia</td>
+                </tr><tr>
+                    <td class="wd-player">Brandon</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">BYE</td>
+                </tr></table>
+            </div><div class="wd-round">
+                <h4>Round 2</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Liam</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Sami</td>
+                </tr><tr>
+                    <td class="wd-player">Alex</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Roland</td>
+                </tr><tr>
+                    <td class="wd-player">Brandon</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Derek</td>
+                </tr><tr>
+                    <td class="wd-player">Kenic</td>
+                    <td class="wd-score result-win">1 - 0</td>
+                    <td class="wd-player">Georgia</td>
+                </tr><tr>
+                    <td class="wd-player">Dan</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">BYE</td>
+                </tr></table>
+            </div><div class="wd-round">
+                <h4>Round 3</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Alex</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Derek</td>
+                </tr><tr>
+                    <td class="wd-player">Kenic</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Roland</td>
+                </tr><tr>
+                    <td class="wd-player">Liam</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Brandon</td>
+                </tr><tr>
+                    <td class="wd-player">Georgia</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Dan</td>
+                </tr><tr>
+                    <td class="wd-player">Sami</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">BYE</td>
+                </tr></table>
+            </div></div>
+                    <div class="wd-standings">
+                        <h4>Standings</h4>
+                        <table class="wd-table wd-standings-table">
+                            <thead><tr>
+                                <th>#</th><th>Player</th><th>Record</th><th>Pts</th><th>OMW%</th>
+                            </tr></thead>
+                            <tbody><tr>
+                <td class="wd-pos">1</td>
+                <td class="wd-player">Alex</td>
+                <td>3-0-0</td>
+                <td class="wd-pts">9</td>
+                <td>44.4%</td>
+            </tr><tr>
+                <td class="wd-pos">2</td>
+                <td class="wd-player">Liam</td>
+                <td>3-0-0</td>
+                <td class="wd-pts">9</td>
+                <td>44.4%</td>
+            </tr><tr>
+                <td class="wd-pos">3</td>
+                <td class="wd-player">Brandon</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">4</td>
+                <td class="wd-player">Kenic</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>55.6%</td>
+            </tr><tr>
+                <td class="wd-pos">5</td>
+                <td class="wd-player">Derek</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">6</td>
+                <td class="wd-player">Roland</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">7</td>
+                <td class="wd-player">Sami</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">8</td>
+                <td class="wd-player">Georgia</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">9</td>
+                <td class="wd-player">Dan</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>33.3%</td>
+            </tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        <div id="weekDetail-6" class="week-detail-panel" style="display:none;">
+            <div class="card" style="margin-top:0;">
+                <div class="wd-header">
+                    <h2>Week 6 Results</h2>
+                    <button class="modal-close" onclick="toggleWeekDetail(6)">&times;</button>
+                </div>
+                <div class="wd-content">
+                    <div class="wd-rounds"><div class="wd-round">
+                <h4>Round 1</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Martin</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Dom</td>
+                </tr><tr>
+                    <td class="wd-player">Georgia</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Sami</td>
+                </tr><tr>
+                    <td class="wd-player">Stephen</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Derek</td>
+                </tr><tr>
+                    <td class="wd-player">Brandon</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Vasudef</td>
+                </tr><tr>
+                    <td class="wd-player">Liam</td>
+                    <td class="wd-score result-win">0 - 0</td>
+                    <td class="wd-player">BYE</td>
+                </tr></table>
+            </div><div class="wd-round">
+                <h4>Round 2</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Liam</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Dom</td>
+                </tr><tr>
+                    <td class="wd-player">Derek</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Vasudef</td>
+                </tr><tr>
+                    <td class="wd-player">Brandon</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Martin</td>
+                </tr><tr>
+                    <td class="wd-player">Stephen</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Georgia</td>
+                </tr><tr>
+                    <td class="wd-player">Sami</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">BYE</td>
+                </tr></table>
+            </div><div class="wd-round">
+                <h4>Round 3</h4>
+                <table class="wd-table"><tr>
+                    <td class="wd-player">Sami</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Dom</td>
+                </tr><tr>
+                    <td class="wd-player">Martin</td>
+                    <td class="wd-score result-win">2 - 1</td>
+                    <td class="wd-player">Derek</td>
+                </tr><tr>
+                    <td class="wd-player">Brandon</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">Stephen</td>
+                </tr><tr>
+                    <td class="wd-player">Georgia</td>
+                    <td class="wd-score result-draw">1 - 1</td>
+                    <td class="wd-player">Liam</td>
+                </tr><tr>
+                    <td class="wd-player">Vasudef</td>
+                    <td class="wd-score result-win">2 - 0</td>
+                    <td class="wd-player">BYE</td>
+                </tr></table>
+            </div></div>
+                    <div class="wd-standings">
+                        <h4>Standings</h4>
+                        <table class="wd-table wd-standings-table">
+                            <thead><tr>
+                                <th>#</th><th>Player</th><th>Record</th><th>Pts</th><th>OMW%</th>
+                            </tr></thead>
+                            <tbody><tr>
+                <td class="wd-pos">1</td>
+                <td class="wd-player">Brandon</td>
+                <td>3-0-0</td>
+                <td class="wd-pts">9</td>
+                <td>55.6%</td>
+            </tr><tr>
+                <td class="wd-pos">2</td>
+                <td class="wd-player">Liam</td>
+                <td>2-0-1</td>
+                <td class="wd-pts">7</td>
+                <td>38.9%</td>
+            </tr><tr>
+                <td class="wd-pos">3</td>
+                <td class="wd-player">Stephen</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>59.3%</td>
+            </tr><tr>
+                <td class="wd-pos">4</td>
+                <td class="wd-player">Martin</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>55.6%</td>
+            </tr><tr>
+                <td class="wd-pos">5</td>
+                <td class="wd-player">Sami</td>
+                <td>2-1-0</td>
+                <td class="wd-pts">6</td>
+                <td>38.9%</td>
+            </tr><tr>
+                <td class="wd-pos">6</td>
+                <td class="wd-player">Georgia</td>
+                <td>1-1-1</td>
+                <td class="wd-pts">4</td>
+                <td>70.4%</td>
+            </tr><tr>
+                <td class="wd-pos">7</td>
+                <td class="wd-player">Vasudef</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>66.7%</td>
+            </tr><tr>
+                <td class="wd-pos">8</td>
+                <td class="wd-player">Derek</td>
+                <td>1-2-0</td>
+                <td class="wd-pts">3</td>
+                <td>55.6%</td>
+            </tr><tr>
+                <td class="wd-pos">9</td>
+                <td class="wd-player">Dom</td>
+                <td>0-3-0</td>
+                <td class="wd-pts">0</td>
+                <td>70.4%</td>
+            </tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+<div class="card">
+    <h2>Playoff Probability</h2>
+    <div class="prob-grid">
+        
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Dom</span>
+                <span class="prob-pct">99.3%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 99.28399999999999%; background: #2ecc71;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 11-4-0</span>
+                <span>Best 7: 33</span>
+                <span>Max Possible: 63</span>
+                <span>OMW%: 57.8%</span>
+                <span>GW%: 68.4%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Sami</span>
+                <span class="prob-pct">88.4%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 88.358%; background: #2ecc71;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 11-7-0</span>
+                <span>Best 7: 33</span>
+                <span>Max Possible: 57</span>
+                <span>OMW%: 53.4%</span>
+                <span>GW%: 58.5%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Alex</span>
+                <span class="prob-pct">76.2%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 76.242%; background: #2ecc71;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 9-5-1</span>
+                <span>Best 7: 28</span>
+                <span>Max Possible: 57</span>
+                <span>OMW%: 54.8%</span>
+                <span>GW%: 61.1%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Derek</span>
+                <span class="prob-pct">63.2%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 63.184%; background: #f1c40f;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 9-6-0</span>
+                <span>Best 7: 27</span>
+                <span>Max Possible: 57</span>
+                <span>OMW%: 51.1%</span>
+                <span>GW%: 56.8%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Brandon</span>
+                <span class="prob-pct">33.2%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 33.19%; background: #e67e22;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 7-7-1</span>
+                <span>Best 7: 22</span>
+                <span>Max Possible: 55</span>
+                <span>OMW%: 60.0%</span>
+                <span>GW%: 48.5%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Roland</span>
+                <span class="prob-pct">31.9%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 31.932%; background: #e67e22;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 7-5-3</span>
+                <span>Best 7: 24</span>
+                <span>Max Possible: 53</span>
+                <span>OMW%: 53.3%</span>
+                <span>GW%: 51.5%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Liam</span>
+                <span class="prob-pct">4.1%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 4.1259999999999994%; background: #e74c3c;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 4-1-1</span>
+                <span>Best 7: 13</span>
+                <span>Max Possible: 49</span>
+                <span>OMW%: 41.7%</span>
+                <span>GW%: 75.0%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Martin</span>
+                <span class="prob-pct">2.2%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 2.1919999999999997%; background: #e74c3c;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 6-9-0</span>
+                <span>Best 7: 18</span>
+                <span>Max Possible: 48</span>
+                <span>OMW%: 63.7%</span>
+                <span>GW%: 46.3%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Stephen</span>
+                <span class="prob-pct">0.9%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 0.95%; background: #e74c3c;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 4-5-0</span>
+                <span>Best 7: 12</span>
+                <span>Max Possible: 48</span>
+                <span>OMW%: 60.5%</span>
+                <span>GW%: 42.9%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Vasudef</span>
+                <span class="prob-pct">0.3%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 0.5%; background: #e74c3c;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 3-3-0</span>
+                <span>Best 7: 9</span>
+                <span>Max Possible: 45</span>
+                <span>OMW%: 55.6%</span>
+                <span>GW%: 53.3%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Georgia</span>
+                <span class="prob-pct">0.2%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 0.5%; background: #e74c3c;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 4-10-1</span>
+                <span>Best 7: 13</span>
+                <span>Max Possible: 46</span>
+                <span>OMW%: 64.1%</span>
+                <span>GW%: 40.0%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Kenic</span>
+                <span class="prob-pct">0.0%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 0.5%; background: #e74c3c;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 2-1-0</span>
+                <span>Best 7: 6</span>
+                <span>Max Possible: 42</span>
+                <span>OMW%: 55.6%</span>
+                <span>GW%: 60.0%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Josh</span>
+                <span class="prob-pct">0.0%</span>
+                
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 0.5%; background: #e74c3c;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 3-5-1</span>
+                <span>Best 7: 10</span>
+                <span>Max Possible: 46</span>
+                <span>OMW%: 60.5%</span>
+                <span>GW%: 43.5%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Roman</span>
+                <span class="prob-pct">0.0%</span>
+                <span class="badge eliminated">ELIMINATED</span>
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 0.5%; background: #e74c3c;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 2-1-0</span>
+                <span>Best 7: 6</span>
+                <span>Max Possible: 42</span>
+                <span>OMW%: 66.7%</span>
+                <span>GW%: 57.1%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Dan (Bristol)</span>
+                <span class="prob-pct">0.0%</span>
+                <span class="badge eliminated">ELIMINATED</span>
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 0.5%; background: #e74c3c;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 2-1-0</span>
+                <span>Best 7: 6</span>
+                <span>Max Possible: 42</span>
+                <span>OMW%: 66.7%</span>
+                <span>GW%: 66.7%</span>
+            </div>
+        </div>
+        <div class="prob-card">
+            <div class="prob-header">
+                <span class="prob-player">Dan</span>
+                <span class="prob-pct">0.0%</span>
+                <span class="badge eliminated">ELIMINATED</span>
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar" style="width: 0.5%; background: #e74c3c;"></div>
+            </div>
+            <div class="prob-details">
+                <span>Record: 1-5-0</span>
+                <span>Best 7: 3</span>
+                <span>Max Possible: 39</span>
+                <span>OMW%: 35.2%</span>
+                <span>GW%: 23.1%</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="card bracket-projected">
+    <h2>Playoff Bracket (Projected)</h2>
+    
+    <div class="bracket-container">
+        <div class="bracket-round bracket-semis">
+            <div class="bracket-round-title">Semifinals</div>
+            <div class="bracket-match" id="sf1-match">
+                <div class="bracket-match-label">SF1</div>
+                <div class="bracket-slot ">
+                    <span class="bracket-seed">1</span>
+                    <span class="bracket-name">Dom</span>
+                    <span class="bracket-score"></span>
+                </div>
+                <div class="bracket-slot ">
+                    <span class="bracket-seed">4</span>
+                    <span class="bracket-name">Derek</span>
+                    <span class="bracket-score"></span>
+                </div>
+            </div>
+            <div class="bracket-match" id="sf2-match">
+                <div class="bracket-match-label">SF2</div>
+                <div class="bracket-slot ">
+                    <span class="bracket-seed">2</span>
+                    <span class="bracket-name">Sami</span>
+                    <span class="bracket-score"></span>
+                </div>
+                <div class="bracket-slot ">
+                    <span class="bracket-seed">3</span>
+                    <span class="bracket-name">Alex</span>
+                    <span class="bracket-score"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bracket-connector-col">
+            <div class="bracket-connector-top"></div>
+            <div class="bracket-connector-bottom"></div>
+        </div>
+
+        <div class="bracket-round bracket-final">
+            <div class="bracket-round-title">Final</div>
+            <div class="bracket-match" id="final-match">
+                <div class="bracket-match-label">Final</div>
+                <div class="bracket-slot ">
+                    <span class="bracket-seed"></span>
+                    <span class="bracket-name">TBD</span>
+                    <span class="bracket-score"></span>
+                </div>
+                <div class="bracket-slot ">
+                    <span class="bracket-seed"></span>
+                    <span class="bracket-name">TBD</span>
+                    <span class="bracket-score"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bracket-champion-col">
+            <div class="bracket-champion-slot ">
+                
+            </div>
+        </div>
+    </div>
+
+    <div class="bracket-third-place">
+        <div class="bracket-round-title">Third Place Match</div>
+        <div class="bracket-match" id="third-match">
+            <div class="bracket-slot ">
+                <span class="bracket-seed"></span>
+                <span class="bracket-name">TBD</span>
+                <span class="bracket-score"></span>
+            </div>
+            <div class="bracket-slot ">
+                <span class="bracket-seed"></span>
+                <span class="bracket-name">TBD</span>
+                <span class="bracket-score"></span>
+            </div>
+            <div class="bracket-result">
+                
+            </div>
+        </div>
+    </div>
+
+    
+</div>
+
+
+<div class="card">
+            <h2>Key Insights</h2>
+            <div class="insights-grid"><div class="insight-card">
+                    <div class="insight-title">Highest Win Rate</div>
+                    <div class="insight-player">Liam</div>
+                    <div class="insight-value">75%</div>
+                    <div class="insight-detail">4-1-1 record</div>
+                </div><div class="insight-card">
+                    <div class="insight-title">Most Perfect Nights</div>
+                    <div class="insight-player">Dom</div>
+                    <div class="insight-value">3</div>
+                    <div class="insight-detail">Undefeated 9-point weeks</div>
+                </div><div class="insight-card">
+                    <div class="insight-title">Iron Player</div>
+                    <div class="insight-player">Sami</div>
+                    <div class="insight-value">6/6</div>
+                    <div class="insight-detail">Weeks attended</div>
+                </div><div class="insight-card">
+                    <div class="insight-title">Worst to First</div>
+                    <div class="insight-player">Derek</div>
+                    <div class="insight-value">+7</div>
+                    <div class="insight-detail">Ranked 11th at worst → finished 4th</div>
+                </div></div>
+        </div>
+
+<div class="card">
+    <h2>League Standings Race</h2>
+    <p style="color:#888; font-size:0.85em; margin-bottom:12px;">Running best-7 total over the season. Click player names to show/hide.</p>
+    <div style="position:relative; height:400px;">
+        <canvas id="best7Chart"></canvas>
+    </div>
+</div>
+
+
+<div class="card">
+    <div class="methodology">
+        <h3>Methodology</h3>
+        <p>
+            This model runs 50,000 Monte Carlo simulations of the remaining 4 weeks.
+            Each simulation models player attendance based on historical patterns (core players at 100%,
+            occasional players at 20%), random 1v1 pairings with bye handling for odd player counts,
+            and match outcomes weighted by Bayesian-regressed historical match win percentages.
+            The global draw rate is set at 5% based on observed data.
+            Final standings use best-7-of-10 scoring, with ties broken by total match points,
+            then Opponent Match Win percentage (OMW%), then game win percentage.
+            OMW% is computed per-week as the average of each opponent's match win percentage
+            (floored at 33.3%), then averaged across all weeks played. A player is marked "CLINCHED" if their minimum guaranteed best-7 exceeds
+            the maximum possible best-7 of enough opponents, and "ELIMINATED" if their maximum possible
+            best-7 cannot reach the minimum guaranteed of enough opponents to break into the top 4.
+        </p>
+    </div>
+</div>
+
+
+
+</div>
+
+<script>
+function toggleWeekDetail(week) {
+    const panel = document.getElementById('weekDetail-' + week);
+    if (!panel) return;
+    const isVisible = panel.style.display !== 'none';
+    // Close all panels first
+    document.querySelectorAll('.week-detail-panel').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.week-header.clickable').forEach(th => th.classList.remove('selected'));
+    if (!isVisible) {
+        panel.style.display = 'block';
+        // Highlight the selected week header
+        document.querySelectorAll('.week-header.clickable').forEach(th => {
+            if (th.textContent === 'W' + week) th.classList.add('selected');
+        });
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+</script>
+
+<script>
+(function() {
+    const weekLabels = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"];
+    const chartDefaults = {
+        color: '#aaa',
+        borderColor: '#0f3460',
+        font: { family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }
+    };
+    Chart.defaults.color = chartDefaults.color;
+    Chart.defaults.font.family = chartDefaults.font.family;
+
+    const gridColor = 'rgba(15, 52, 96, 0.6)';
+
+    // Best-7 Race Chart
+    new Chart(document.getElementById('best7Chart'), {
+        type: 'line',
+        data: {
+            labels: weekLabels,
+            datasets: [{"label": "Dom", "data": [9, 15, 24, 33, 33, 33], "borderColor": "#e94560", "backgroundColor": "#e94560", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}, {"label": "Sami", "data": [6, 9, 18, 24, 27, 33], "borderColor": "#2ecc71", "backgroundColor": "#2ecc71", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}, {"label": "Alex", "data": [3, 9, 15, 19, 28, 28], "borderColor": "#3498db", "backgroundColor": "#3498db", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}, {"label": "Derek", "data": [null, 9, 15, 21, 24, 27], "borderColor": "#f1c40f", "backgroundColor": "#f1c40f", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}, {"label": "Roland", "data": [6, 10, 16, 21, 24, 24], "borderColor": "#9b59b6", "backgroundColor": "#9b59b6", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}, {"label": "Brandon", "data": [null, 0, 3, 7, 13, 22], "borderColor": "#e67e22", "backgroundColor": "#e67e22", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}, {"label": "Martin", "data": [3, 6, 9, 12, 12, 18], "borderColor": "#1abc9c", "backgroundColor": "#1abc9c", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}, {"label": "Georgia", "data": [0, 0, 3, 6, 9, 13], "borderColor": "#e74c3c", "backgroundColor": "#e74c3c", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}, {"label": "Liam", "data": [null, null, null, null, 9, 13], "borderColor": "#00bcd4", "backgroundColor": "#00bcd4", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}, {"label": "Stephen", "data": [6, 6, 6, 6, 6, 12], "borderColor": "#ff9800", "backgroundColor": "#ff9800", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}, {"label": "Josh", "data": [3, 7, 7, 10, 10, 10], "borderColor": "#8bc34a", "backgroundColor": "#8bc34a", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}, {"label": "Vasudef", "data": [6, 6, 6, 6, 6, 9], "borderColor": "#ff5722", "backgroundColor": "#ff5722", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}, {"label": "Dan", "data": [null, null, null, 0, 3, 3], "borderColor": "#607d8b", "backgroundColor": "#607d8b", "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 7, "borderWidth": 2.5, "spanGaps": true}]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { padding: 16, usePointStyle: true, pointStyle: 'circle', boxWidth: 8 }
+                },
+                tooltip: {
+                    backgroundColor: '#16213e',
+                    borderColor: '#0f3460',
+                    borderWidth: 1,
+                    titleColor: '#e94560',
+                    bodyColor: '#e0e0e0',
+                    padding: 12,
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.dataset.label + ': ' + (ctx.parsed.y !== null ? ctx.parsed.y + ' pts' : 'N/A');
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { grid: { color: gridColor }, ticks: { color: '#888' } },
+                y: {
+                    grid: { color: gridColor },
+                    ticks: { color: '#888' },
+                    title: { display: true, text: 'Best 7 Total', color: '#888' },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+})();
+</script>
+
+<script>
+function runPrediction() {
+    const btn = document.getElementById('btnPredict');
+    const placeholder = document.getElementById('probPlaceholder');
+    const spinner = document.getElementById('probSpinner');
+    const grid = document.getElementById('probGrid');
+    if (!placeholder) return;
+    placeholder.style.display = 'none';
+    spinner.style.display = 'block';
+
+    const leagueParam = new URLSearchParams(window.location.search).get('league') || '';
+    const url = '/api/simulate' + (leagueParam ? '?league=' + encodeURIComponent(leagueParam) : '');
+
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            spinner.style.display = 'none';
+            if (data.error) {
+                placeholder.style.display = 'block';
+                placeholder.innerHTML = '<p style="color:#e74c3c;">Error: ' + data.error + '</p>';
+                return;
+            }
+            // Build probability cards from JSON
+            let cards = '';
+            data.players.forEach(p => {
+                const prob = p.playoff_prob;
+                let barColor = '#e74c3c';
+                if (prob >= 75) barColor = '#2ecc71';
+                else if (prob >= 50) barColor = '#f1c40f';
+                else if (prob >= 25) barColor = '#e67e22';
+
+                let badge = '';
+                if (p.status === 'clinched' || prob >= 99.9) badge = '<span class="badge clinched">CLINCHED</span>';
+                else if (p.status === 'eliminated' || prob === 0) badge = '<span class="badge eliminated">ELIMINATED</span>';
+
+                cards += `
+                <div class="prob-card">
+                    <div class="prob-header">
+                        <span class="prob-player">${p.name}</span>
+                        <span class="prob-pct">${prob.toFixed(1)}%</span>
+                        ${badge}
+                    </div>
+                    <div class="prob-bar-bg">
+                        <div class="prob-bar" style="width: ${Math.max(prob, 0.5)}%; background: ${barColor};"></div>
+                    </div>
+                    <div class="prob-details">
+                        <span>Record: ${p.record}</span>
+                        <span>Best 7: ${p.current_best7}</span>
+                        <span>Max Possible: ${p.max_possible}</span>
+                        <span>OMW%: ${(p.omw * 100).toFixed(1)}%</span>
+                        <span>GW%: ${(p.gwp * 100).toFixed(1)}%</span>
+                    </div>
+                </div>`;
+            });
+            grid.innerHTML = cards;
+            grid.style.display = 'grid';
+        })
+        .catch(err => {
+            spinner.style.display = 'none';
+            placeholder.style.display = 'block';
+            placeholder.innerHTML = '<p style="color:#e74c3c;">Network error: ' + err.message + '</p>';
+        });
+}
+</script>
+
+</body>
+</html>

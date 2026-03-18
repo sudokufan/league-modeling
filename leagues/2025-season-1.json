@@ -1,0 +1,39 @@
+{
+  "config": {
+    "total_weeks": 10,
+    "rounds_per_week": 3,
+    "best_of_n": 6,
+    "playoff_spots": 0,
+    "num_simulations": 0
+  },
+  "players": [
+    "Sami",
+    "Alex",
+    "Stephen",
+    "Martin",
+    "Georgia",
+    "Dom",
+    "Vasudef",
+    "Jack",
+    "Roland",
+    "Jacob"
+  ],
+  "unofficial_players": ["Roland", "Jacob"],
+  "matches": [],
+  "weekly_scores": {
+    "Sami":     [9, 9, 6, 6, 6, 7, null, 6, null, null],
+    "Alex":     [3, 3, 6, 3, 3, 6, 9, 6, 6, 3],
+    "Stephen":  [6, 0, 0, 6, 6, 3, 3, 3, 3, 6],
+    "Martin":   [3, null, 0, null, 6, 6, 6, 3, 3, 3],
+    "Georgia":  [3, 6, null, 3, 3, null, null, null, 6, null],
+    "Dom":      [null, null, 6, 9, null, null, null, null, null, null],
+    "Vasudef":  [3, 0, null, 3, null, null, null, null, null, null],
+    "Jack":     [null, 3, null, null, 3, null, null, null, null, null],
+    "Roland":   [null, 6, 9, null, 9, 4, 3, null, 9, 6],
+    "Jacob":    [null, null, null, null, null, null, null, null, null, 9]
+  },
+  "notes": {
+    "format": "Swiss rounds only, no playoffs. Best 6 of 10 weekly scores.",
+    "unofficial": "Roland and Jacob were not official league participants. Roland's results were tracked to convince him to join Season 2. Jacob attended only Week 10."
+  }
+}

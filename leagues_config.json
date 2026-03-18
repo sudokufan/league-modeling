@@ -1,0 +1,21 @@
+{
+  "active_league": "2026-season-1",
+  "leagues": [
+    {
+      "id": "2025-season-1",
+      "name": "2025 Season 1",
+      "display_name": "Debut League",
+      "file": "2025-season-1.json",
+      "status": "completed",
+      "created": "2025-10-03"
+    },
+    {
+      "id": "2026-season-1",
+      "name": "2026 Season 1",
+      "display_name": "Lorwyn League",
+      "file": "2026-season-1.json",
+      "status": "active",
+      "created": "2026-01-01"
+    }
+  ]
+}
