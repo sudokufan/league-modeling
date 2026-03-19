@@ -2,13 +2,12 @@
 """
 MTG League Playoff Probability Simulator
 Monte Carlo simulation for a 10-week Magic: The Gathering league.
-Loads data from league_data.json and derives all stats from raw match data.
+Loads data from per-league JSON files and derives all stats from raw match data.
 """
 
 import json
 import os
 import random
-import shutil
 from collections import defaultdict
 from typing import Optional
 
@@ -19,40 +18,13 @@ from typing import Optional
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 LEAGUES_DIR = os.path.join(PROJECT_DIR, "leagues")
 LEAGUES_CONFIG_FILE = os.path.join(PROJECT_DIR, "leagues_config.json")
-DATA_FILE = os.path.join(PROJECT_DIR, "league_data.json")  # legacy path for backward compat
 
 GLOBAL_DRAW_RATE = 0.05  # ~5% draw rate from historical data
 MAX_WEEKLY_POINTS = 9
 
 
-def _migrate_legacy_data():
-    """Migrate league_data.json to leagues/ directory on first run."""
-    legacy_file = os.path.join(PROJECT_DIR, "league_data.json")
-    if os.path.exists(legacy_file) and not os.path.exists(LEAGUES_DIR):
-        os.makedirs(LEAGUES_DIR, exist_ok=True)
-        dest = os.path.join(LEAGUES_DIR, "2026-season-1.json")
-        shutil.copy2(legacy_file, dest)
-        # Create config
-        config = {
-            "active_league": "2026-season-1",
-            "leagues": [
-                {
-                    "id": "2026-season-1",
-                    "name": "2026 Season 1",
-                    "file": "2026-season-1.json",
-                    "status": "active",
-                    "created": "2026-01-01"
-                }
-            ]
-        }
-        with open(LEAGUES_CONFIG_FILE, "w") as f:
-            json.dump(config, f, indent=2)
-        print(f"Migrated league_data.json -> leagues/2026-season-1.json")
-
-
 def load_leagues_config() -> dict:
     """Load the leagues configuration file."""
-    _migrate_legacy_data()
     if not os.path.exists(LEAGUES_CONFIG_FILE):
         # Create a default config if none exists
         os.makedirs(LEAGUES_DIR, exist_ok=True)
