@@ -673,7 +673,8 @@ def check_elimination_clinch(results: dict, players: list, playoff_spots: int) -
 def generate_insights(results: dict, status: dict, players: list, playoff_spots: int,
                       weeks_completed: int, total_weeks: int, overall_omw: dict = None,
                       weekly_scores: dict = None, overall_stats: dict = None,
-                      unofficial_players: set = None, best_of_n: int = 7) -> list:
+                      unofficial_players: set = None, best_of_n: int = 7,
+                      matches: list = None) -> list:
     """Generate key insight cards for the league. Returns list of dicts with title/player/value/detail."""
     insights = []
     if not weekly_scores or not overall_stats:
@@ -780,6 +781,59 @@ def generate_insights(results: dict, status: dict, players: list, playoff_spots:
                 "player": ", ".join(nine_players),
                 "value": "9 pts",
                 "detail": "Achieved a perfect night"
+            })
+
+    # Most "almost there" nights: won rounds 1 and 2, then lost round 3,
+    # while never having recorded a perfect 3-0 week in this league.
+    if matches:
+        weekly_nines = {p for p in official_players if 9 in [s for s in weekly_scores.get(p, []) if s is not None]}
+        round_results = defaultdict(dict)  # player -> {week: {round: 'W'/'L'/'D'}}
+
+        for m in matches:
+            week = m["week"]
+            round_num = m["round"]
+            pa = m["player_a"]
+            pb = m.get("player_b")
+            ga = m["games_a"]
+            gb = m["games_b"]
+
+            if pb is None or pb == "-" or pb == "":
+                result_a = "L" if ga == 0 and gb == 0 else "W"
+                if pa in official_players:
+                    round_results[pa].setdefault(week, {})[round_num] = result_a
+                continue
+
+            if ga > gb:
+                result_a, result_b = "W", "L"
+            elif gb > ga:
+                result_a, result_b = "L", "W"
+            else:
+                result_a = result_b = "D"
+
+            if pa in official_players:
+                round_results[pa].setdefault(week, {})[round_num] = result_a
+            if pb in official_players:
+                round_results[pb].setdefault(week, {})[round_num] = result_b
+
+        almost_there_counts = {}
+        for p in official_players:
+            if p in weekly_nines:
+                continue
+            count = 0
+            for week_map in round_results[p].values():
+                if week_map.get(1) == "W" and week_map.get(2) == "W" and week_map.get(3) == "L":
+                    count += 1
+            if count > 0:
+                almost_there_counts[p] = count
+
+        if almost_there_counts:
+            top_count = max(almost_there_counts.values())
+            leaders = sorted([p for p, count in almost_there_counts.items() if count == top_count])
+            insights.append({
+                "title": "Almost There",
+                "player": ", ".join(leaders),
+                "value": str(top_count),
+                "detail": "Started 2-0, then lost Round 3"
             })
 
     return insights
@@ -3598,7 +3652,8 @@ def run_full_pipeline(server_mode: bool = False, league_id: str = None, skip_sim
                                       weekly_scores=weekly_scores,
                                       overall_stats=overall_stats,
                                       unofficial_players=set(league.get("unofficial_players", [])),
-                                      best_of_n=league["best_of_n"])
+                                      best_of_n=league["best_of_n"],
+                                      matches=league.get("matches", []))
     else:
         print(f"Running {league['num_simulations']:,} Monte Carlo simulations...")
         print(f"League: {league['weeks_completed']}/{league['total_weeks']} weeks completed, "
@@ -3613,7 +3668,8 @@ def run_full_pipeline(server_mode: bool = False, league_id: str = None, skip_sim
                                       weekly_scores=league["weekly_scores"],
                                       overall_stats=league["overall_stats"],
                                       unofficial_players=set(league.get("unofficial_players", [])),
-                                      best_of_n=league["best_of_n"])
+                                      best_of_n=league["best_of_n"],
+                                      matches=league.get("matches", []))
 
     # Auto-populate playoff seedings when regular season is complete (and playoffs exist)
     if league["weeks_completed"] >= league["total_weeks"] and league["playoff_spots"] >= 4:
@@ -3867,19 +3923,24 @@ tr.unofficial {{ opacity: 0.45; }}
 def generate_alltime_page(server_mode: bool = False) -> str:
     """Generate an all-time records and stats page across all leagues."""
     leagues_config = load_leagues_config()
-    all_leagues = leagues_config["leagues"]
+    all_leagues = sorted(
+        leagues_config["leagues"],
+        key=lambda lg: (lg.get("created", ""), lg["id"])
+    )
 
     # Gather data
     player_career = defaultdict(lambda: {
         "leagues": 0, "weeks_played": 0, "nines": 0,
-        "best_finishes": [], "weekly_scores_all": [],
+        "best_finishes": [], "completed_finishes": [], "weekly_scores_all": [],
         "highest_weekly": 0, "total_best_n": 0, "best_week_rank": 999,
+        "best_week_tied": False,
         "attendance_streak": 0, "max_attendance_streak": 0,
         "undefeated_streak": 0, "max_undefeated_streak": 0,
     })
 
     league_champions = []
     league_standings_history = []  # list of (league_name, standings_order)
+    league_week_sequences = []
 
     for lg_info in all_leagues:
         data = load_league_data(league_id=lg_info["id"])
@@ -3889,6 +3950,13 @@ def generate_alltime_page(server_mode: bool = False) -> str:
         weekly_scores = league["weekly_scores"]
         best_of_n = league["best_of_n"]
         display_name = lg_info.get("display_name", lg_info["name"])
+        is_completed_league = lg_info.get("status") == "completed"
+        total_weeks_in_league = len(next(iter(weekly_scores.values()))) if weekly_scores else 0
+        league_week_sequences.append({
+            "official_players": set(p for p in players if p not in unofficial),
+            "weekly_scores": weekly_scores,
+            "weeks": total_weeks_in_league,
+        })
 
         # Compute standings
         league_results = {}
@@ -3921,26 +3989,21 @@ def generate_alltime_page(server_mode: bool = False) -> str:
             league_champions.append({"league": display_name, "player": champion})
 
         # Compute per-week rankings for best-week-rank stat
-        total_weeks_in_league = len(next(iter(weekly_scores.values())))
         for w in range(total_weeks_in_league):
             week_participants = [(p, weekly_scores[p][w]) for p in official_players
                                  if weekly_scores[p][w] is not None]
             if not week_participants:
                 continue
             week_participants.sort(key=lambda x: x[1], reverse=True)
-            # Assign ranks with ties
-            for i, (p, score) in enumerate(week_participants):
-                rank = 1
-                for j in range(i):
-                    if week_participants[j][1] > score:
-                        rank = j + 1
-                        break
-                else:
-                    rank = 1 if i == 0 else (i + 1 if week_participants[i-1][1] > score else rank)
-                # Simpler: count how many scored higher + 1
+            for p, score in week_participants:
                 rank = sum(1 for _, s in week_participants if s > score) + 1
+                tied = sum(1 for _, s in week_participants if s == score) > 1
                 if p not in unofficial:
-                    player_career[p]["best_week_rank"] = min(player_career[p]["best_week_rank"], rank)
+                    current_best = player_career[p]["best_week_rank"]
+                    current_tied = player_career[p]["best_week_tied"]
+                    if rank < current_best or (rank == current_best and current_tied and not tied):
+                        player_career[p]["best_week_rank"] = rank
+                        player_career[p]["best_week_tied"] = tied
 
         for p in players:
             if p in unofficial:
@@ -3959,10 +4022,26 @@ def generate_alltime_page(server_mode: bool = False) -> str:
             # Finish position
             if p in standings:
                 pos = standings.index(p) + 1
-                pc["best_finishes"].append({"league": display_name, "position": pos})
+                finish = {"league": display_name, "position": pos}
+                pc["best_finishes"].append(finish)
+                if is_completed_league:
+                    pc["completed_finishes"].append(finish)
 
-            # Attendance streak (consecutive weeks attended, reset per league)
-            attend_streak = 0
+    # Attendance and undefeated streaks carry across league boundaries.
+    for p in player_career:
+        pc = player_career[p]
+        attend_streak = 0
+        undef_streak = 0
+
+        for league_seq in league_week_sequences:
+            if p in league_seq["official_players"]:
+                scores = list(league_seq["weekly_scores"].get(p, []))
+            else:
+                scores = []
+
+            while len(scores) < league_seq["weeks"]:
+                scores.append(None)
+
             for s in scores:
                 if s is not None:
                     attend_streak += 1
@@ -3970,9 +4049,6 @@ def generate_alltime_page(server_mode: bool = False) -> str:
                 else:
                     attend_streak = 0
 
-            # Undefeated streak (consecutive 9-point weeks, reset per league)
-            undef_streak = 0
-            for s in scores:
                 if s == 9:
                     undef_streak += 1
                     pc["max_undefeated_streak"] = max(pc["max_undefeated_streak"], undef_streak)
@@ -4028,7 +4104,7 @@ def generate_alltime_page(server_mode: bool = False) -> str:
 
     # Most top-4 finishes
     for p in player_career:
-        player_career[p]["_top4"] = sum(1 for f in player_career[p]["best_finishes"] if f["position"] <= 4)
+        player_career[p]["_top4"] = sum(1 for f in player_career[p]["completed_finishes"] if f["position"] <= 4)
     leaders, val = find_leaders(lambda p: player_career[p]["_top4"])
     if leaders:
         records.append({
@@ -4039,7 +4115,7 @@ def generate_alltime_page(server_mode: bool = False) -> str:
 
     # Most league titles (1st place finishes)
     for p in player_career:
-        player_career[p]["_titles"] = sum(1 for f in player_career[p]["best_finishes"] if f["position"] == 1)
+        player_career[p]["_titles"] = sum(1 for f in player_career[p]["completed_finishes"] if f["position"] == 1)
     leaders, val = find_leaders(lambda p: player_career[p]["_titles"])
     if leaders:
         records.append({
@@ -4077,20 +4153,16 @@ def generate_alltime_page(server_mode: bool = False) -> str:
     career_rows = ""
     for p in career_sorted:
         pc = player_career[p]
-        best_finish = min((f["position"] for f in pc["best_finishes"]), default=0)
+        best_finish = min((f["position"] for f in pc["completed_finishes"]), default=0)
         best_finish_str = ordinal(best_finish) if best_finish else '—'
-        best_week_rank = pc["best_week_rank"]
-        best_week_str = ordinal(best_week_rank) if best_week_rank < 999 else '—'
         avg_weekly = sum(pc["weekly_scores_all"]) / len(pc["weekly_scores_all"]) if pc["weekly_scores_all"] else 0
         career_rows += f"""<tr>
             <td class="player-name">{p}</td>
             <td data-val="{pc['leagues']}">{pc['leagues']}</td>
             <td data-val="{pc['weeks_played']}">{pc['weeks_played']}</td>
             <td data-val="{pc['nines']}">{pc['nines']}</td>
-            <td data-val="{best_week_rank}">{best_week_str}</td>
             <td data-val="{avg_weekly:.2f}">{avg_weekly:.1f}</td>
             <td data-val="{best_finish if best_finish else 999}">{best_finish_str}</td>
-            <td data-val="{pc['total_best_n']}" class="best7">{pc['total_best_n']}</td>
         </tr>"""
 
     nav_links = """<nav class="nav-links">
@@ -4174,10 +4246,8 @@ tr:hover {{ background: rgba(233,69,96,0.06); }}
                 <th class="sortable" data-col="1" data-dir="desc">Seasons</th>
                 <th class="sortable" data-col="2" data-dir="desc">Weeks</th>
                 <th class="sortable" data-col="3" data-dir="desc">9-pt Nights</th>
-                <th class="sortable" data-col="4" data-dir="asc">Best Week</th>
-                <th class="sortable" data-col="5" data-dir="desc">Avg/Week</th>
-                <th class="sortable" data-col="6" data-dir="asc">Best Finish</th>
-                <th class="sortable" data-col="7" data-dir="desc">Total Best-N</th>
+                <th class="sortable" data-col="4" data-dir="desc">Avg/Week</th>
+                <th class="sortable" data-col="5" data-dir="asc">Best Finish</th>
             </tr>
         </thead>
         <tbody>
