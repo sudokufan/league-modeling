@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Generated
+league_dashboard.html
+
+# OS
+.DS_Store
