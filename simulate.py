@@ -1062,6 +1062,7 @@ def generate_html(league: dict, results: dict, status: dict, insights: list, ser
     matches = league["matches"]
 
     overall_omw = league.get("overall_omw", {})
+    per_week_omw = league.get("per_week_omw", {})
     unofficial_players = set(league.get("unofficial_players", []))
 
     # League info for multi-league support
@@ -1199,6 +1200,68 @@ def generate_html(league: dict, results: dict, status: dict, insights: list, ser
             <td class="total-pts">{results[p]['total_match_pts']}</td>
             <td class="omw-col">{omw_val*100:.1f}%</td>
         </tr>"""
+
+    # Build weekly top-4 progression table
+    official_players = [p for p in players if p not in unofficial_players]
+    weekly_top4_rows = ""
+    if weeks_completed > 0 and playoff_spots > 0:
+        # Compute top-playoff_spots standings snapshot after each week
+        weekly_snapshots = []  # list of ordered player lists (length playoff_spots)
+        for w in range(1, total_weeks + 1):
+            if w > weeks_completed:
+                weekly_snapshots.append(None)
+                continue
+            # OMW through week w: average of per_week_omw[1..w] for players who participated
+            def omw_through(p, week=w):
+                omws = [per_week_omw[wk][p] for wk in range(1, week + 1)
+                        if wk in per_week_omw and p in per_week_omw[wk]]
+                return sum(omws) / len(omws) if omws else 0
+
+            snapshot = sorted(official_players, key=lambda p: (
+                best_n_score(weekly_scores[p][:w], best_of_n),
+                total_match_points(weekly_scores[p][:w]),
+                omw_through(p),
+            ), reverse=True)
+            weekly_snapshots.append(snapshot[:playoff_spots])
+
+        week_headers = "".join(
+            f'<th class="wt4-wk">{"Wk " + str(w)}</th>' for w in range(1, total_weeks + 1)
+        )
+        for rank in range(1, playoff_spots + 1):
+            cells = ""
+            for w_idx, snapshot in enumerate(weekly_snapshots):
+                if snapshot is None:
+                    cells += '<td class="wt4-future"></td>'
+                else:
+                    name = snapshot[rank - 1] if len(snapshot) >= rank else ""
+                    # Highlight if this player holds the same rank currently
+                    is_current = (rank <= len(standings_order) and
+                                  name == standings_order[rank - 1] and
+                                  w_idx + 1 == weeks_completed)
+                    cls = "wt4-current" if is_current else "wt4-cell"
+                    cells += f'<td class="{cls}">{name}</td>'
+            weekly_top4_rows += f'<tr><td class="wt4-rank">{rank}</td>{cells}</tr>'
+
+        weekly_top4_html = f"""
+<div class="card">
+    <h2>Playoff Race</h2>
+    <p style="color:#888; font-size:0.85em; margin-bottom:12px;">Top {playoff_spots} standings after each week.</p>
+    <div class="table-scroll">
+    <table class="wt4-table">
+        <thead>
+            <tr>
+                <th class="wt4-rank-hdr">#</th>
+                {week_headers}
+            </tr>
+        </thead>
+        <tbody>
+            {weekly_top4_rows}
+        </tbody>
+    </table>
+    </div>
+</div>"""
+    else:
+        weekly_top4_html = ""
 
     prob_cards = ""
     for p in prob_order:
@@ -3010,6 +3073,46 @@ body {{
     margin-right: 6px;
 }}
 
+/* Weekly top-4 progression table */
+.table-scroll {{
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}}
+.wt4-table {{
+    border-collapse: collapse;
+    font-size: 0.85em;
+    white-space: nowrap;
+}}
+.wt4-table th, .wt4-table td {{
+    padding: 6px 10px;
+    border: 1px solid #222;
+    text-align: center;
+}}
+.wt4-rank-hdr {{
+    color: #888;
+    font-weight: normal;
+    width: 30px;
+}}
+.wt4-wk {{
+    color: #888;
+    font-weight: normal;
+    min-width: 70px;
+}}
+.wt4-rank {{
+    color: #555;
+    font-size: 0.85em;
+}}
+.wt4-cell {{
+    color: #ccc;
+}}
+.wt4-current {{
+    color: #2ecc71;
+    font-weight: bold;
+}}
+.wt4-future {{
+    background: #111;
+}}
+
 /* Responsive: make standings table horizontally scrollable */
 .table-wrapper {{
     overflow-x: auto;
@@ -3412,6 +3515,8 @@ body {{
 </div>
 
 {week_detail_panels}
+
+{weekly_top4_html}
 
 {prob_section}
 
