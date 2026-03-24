@@ -50,9 +50,13 @@ export default function WeekDetailPanel({
     weekPlayers.add(pa)
 
     if (!pb) {
-      // Bye
-      getRecord(pa).w += 1
-      getRecord(pa).pts += 3
+      // Bye: 0-0 bye is a DQ/loss (0 pts), otherwise a win (3 pts)
+      if (ga === 0 && gb === 0) {
+        getRecord(pa).l += 1
+      } else {
+        getRecord(pa).w += 1
+        getRecord(pa).pts += 3
+      }
     } else {
       weekPlayers.add(pb)
       if (ga > gb) {
