@@ -1152,7 +1152,34 @@ def generate_html(league: dict, results: dict, status: dict, insights: list, ser
                 cells += '<td class="score-future"></td>'
         return cells
 
-    defending_champion = "Sami"
+    # Find the winner of the most recent completed league before this one
+    defending_champion = None
+    if all_leagues and current_league_id:
+        league_ids = [l["id"] for l in all_leagues]
+        current_idx = next((i for i, l in enumerate(all_leagues) if l["id"] == current_league_id), None)
+        if current_idx is not None:
+            for prev_league in reversed(all_leagues[:current_idx]):
+                if prev_league.get("status") == "completed":
+                    try:
+                        prev_data = load_league_data(league_id=prev_league["id"])
+                        prev_league_stats = derive_stats(prev_data)
+                        prev_players = [p for p in prev_league_stats["players"]
+                                        if p not in prev_league_stats.get("unofficial_players", [])]
+                        prev_ws = prev_league_stats["weekly_scores"]
+                        prev_bn = prev_league_stats["best_of_n"]
+                        prev_omw = prev_league_stats.get("overall_omw", {})
+                        prev_ostats = prev_league_stats.get("overall_stats", {})
+                        prev_winner = sorted(prev_players, key=lambda p: (
+                            best_n_score(prev_ws[p], prev_bn),
+                            total_match_points(prev_ws[p]),
+                            prev_omw.get(p, 0),
+                            prev_ostats.get(p, {}).get("gwp", 0),
+                        ), reverse=True)
+                        if prev_winner:
+                            defending_champion = prev_winner[0]
+                    except Exception:
+                        pass
+                    break
 
     standings_rows = ""
     has_unofficial = len(unofficial_players) > 0
