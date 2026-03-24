@@ -1,15 +1,16 @@
-import type { DerivedLeague } from '@/types'
-import Header from './Header'
-import LeagueSelector from './LeagueSelector'
-import Nav from './Nav'
+import type { DerivedLeague } from "@/types";
+import Header from "./Header";
+import LeagueSelector from "./LeagueSelector";
+import Nav from "./Nav";
 
 interface AppHeaderProps {
-  league?: DerivedLeague
+  league?: DerivedLeague;
 }
 
 export default function AppHeader({ league }: AppHeaderProps) {
   return (
     <div className="text-center">
+      <Nav />
       {league ? (
         <Header
           leagueName={league._league_info.name}
@@ -18,15 +19,14 @@ export default function AppHeader({ league }: AppHeaderProps) {
           totalWeeks={league.total_weeks}
           bestOfN={league.best_of_n}
           playoffSpots={league.playoff_spots}
-          isCompleted={league._league_info.status === 'completed'}
+          isCompleted={league._league_info.status === "completed"}
         />
       ) : (
-        <div className="pt-6 pb-2">
-          <h1 className="text-[1.8em] text-[#e94560] tracking-wide">MTG League</h1>
-        </div>
+        <h1 className="text-[1.8em] text-[#e94560] tracking-wide">
+          MTG League
+        </h1>
       )}
       <LeagueSelector />
-      <Nav />
     </div>
-  )
+  );
 }

@@ -1,11 +1,11 @@
 interface HeaderProps {
-  leagueName: string
-  displayName?: string
-  weeksCompleted: number
-  totalWeeks: number
-  bestOfN: number
-  playoffSpots: number
-  isCompleted: boolean
+  leagueName: string;
+  displayName?: string;
+  weeksCompleted: number;
+  totalWeeks: number;
+  bestOfN: number;
+  playoffSpots: number;
+  isCompleted: boolean;
 }
 
 export default function Header({
@@ -20,15 +20,15 @@ export default function Header({
   const playoffText = isCompleted
     ? playoffSpots > 0
       ? `Top ${playoffSpots} qualified`
-      : 'No playoffs'
+      : "No playoffs"
     : playoffSpots > 0
       ? `Top ${playoffSpots} qualify`
-      : 'No playoffs'
+      : "No playoffs";
 
-  const subtitle = `Week ${weeksCompleted}/${totalWeeks} · Best ${bestOfN} of ${totalWeeks} · ${playoffText}`
+  const subtitle = `Week ${weeksCompleted}/${totalWeeks} · Best ${bestOfN} of ${totalWeeks} · ${playoffText}`;
 
   return (
-    <div className="text-center pt-6 pb-0 mb-4">
+    <div className="text-center pb-0 mb-4">
       <div className="mb-1">
         <h1 className="text-[1.8em] text-[#e94560] tracking-wide mb-0.5 inline">
           {leagueName}
@@ -44,5 +44,5 @@ export default function Header({
       )}
       <div className="text-[#888] text-[0.85em]">{subtitle}</div>
     </div>
-  )
+  );
 }

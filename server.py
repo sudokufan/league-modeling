@@ -50,22 +50,38 @@ class LeagueHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
-        if path == "/" or path == "":
-            self._serve_dashboard()
-        elif path == "/cumulative":
-            self._serve_cumulative()
-        elif path == "/all-time":
-            self._serve_alltime()
-        elif path == "/head-to-head":
-            self._serve_h2h()
-        elif path == "/api/simulate":
-            self._serve_simulation()
-        elif path == "/api/league-data":
-            self._serve_league_data()
-        elif path == "/api/leagues":
-            self._serve_leagues_list()
+        if path.startswith("/api/"):
+            if path == "/api/simulate":
+                self._serve_simulation()
+            elif path == "/api/league-data":
+                self._serve_league_data()
+            elif path == "/api/leagues":
+                self._serve_leagues_list()
+            else:
+                self.send_error(404, "Not Found")
         else:
-            self.send_error(404, "Not Found")
+            # Non-API routes: serve React frontend from frontend/dist/ if built,
+            # otherwise indicate this is an API-only server.
+            dist_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontend", "dist")
+            if os.path.isdir(dist_dir):
+                # Serve static files from the React build
+                file_path = os.path.join(dist_dir, path.lstrip("/"))
+                if os.path.isfile(file_path):
+                    self._serve_static_file(file_path)
+                else:
+                    # SPA fallback: serve index.html for all non-file routes
+                    index_path = os.path.join(dist_dir, "index.html")
+                    if os.path.isfile(index_path):
+                        self._serve_static_file(index_path)
+                    else:
+                        self.send_error(404, "Not Found")
+            else:
+                # No build available — redirect to React dev server
+                self.send_response(200)
+                self._send_cors_headers()
+                self.send_header("Content-Type", "text/plain")
+                self.end_headers()
+                self.wfile.write(b"API server -- use the React frontend on port 5173")
 
     def do_POST(self):
         parsed = urlparse(self.path)
@@ -84,57 +100,23 @@ class LeagueHandler(BaseHTTPRequestHandler):
         else:
             self.send_error(404, "Not Found")
 
-    def _serve_dashboard(self):
-        """Run simulation and serve the dashboard HTML."""
+    def _serve_static_file(self, file_path):
+        """Serve a static file from the filesystem."""
+        import mimetypes
+        content_type, _ = mimetypes.guess_type(file_path)
+        if content_type is None:
+            content_type = "application/octet-stream"
         try:
-            league_id = self._get_requested_league_id()
-            html = simulate.run_full_pipeline(server_mode=True, league_id=league_id)
+            with open(file_path, "rb") as f:
+                data = f.read()
             self.send_response(200)
             self._send_cors_headers()
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(html.encode("utf-8"))))
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(data)))
             self.end_headers()
-            self.wfile.write(html.encode("utf-8"))
+            self.wfile.write(data)
         except Exception as e:
-            self.send_response(500)
-            self._send_cors_headers()
-            self.send_header("Content-Type", "text/plain")
-            self.end_headers()
-            self.wfile.write(f"Error generating dashboard: {e}".encode("utf-8"))
-
-    def _serve_cumulative(self):
-        """Serve the cumulative standings page."""
-        try:
-            html = simulate.generate_cumulative_page(year=2026, server_mode=True)
-            self.send_response(200)
-            self._send_cors_headers()
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(html.encode("utf-8"))))
-            self.end_headers()
-            self.wfile.write(html.encode("utf-8"))
-        except Exception as e:
-            self.send_response(500)
-            self._send_cors_headers()
-            self.send_header("Content-Type", "text/plain")
-            self.end_headers()
-            self.wfile.write(f"Error generating cumulative page: {e}".encode("utf-8"))
-
-    def _serve_alltime(self):
-        """Serve the all-time records page."""
-        try:
-            html = simulate.generate_alltime_page(server_mode=True)
-            self.send_response(200)
-            self._send_cors_headers()
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(html.encode("utf-8"))))
-            self.end_headers()
-            self.wfile.write(html.encode("utf-8"))
-        except Exception as e:
-            self.send_response(500)
-            self._send_cors_headers()
-            self.send_header("Content-Type", "text/plain")
-            self.end_headers()
-            self.wfile.write(f"Error generating all-time page: {e}".encode("utf-8"))
+            self.send_error(500, f"Error serving file: {e}")
 
     def _serve_simulation(self):
         """Run Monte Carlo simulation and return results as JSON.
@@ -152,23 +134,6 @@ class LeagueHandler(BaseHTTPRequestHandler):
             self._send_json_response(200, result)
         except Exception as e:
             self._send_json_error(500, str(e))
-
-    def _serve_h2h(self):
-        """Serve the head-to-head records page."""
-        try:
-            html = simulate.generate_h2h_page(server_mode=True)
-            self.send_response(200)
-            self._send_cors_headers()
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(html.encode("utf-8"))))
-            self.end_headers()
-            self.wfile.write(html.encode("utf-8"))
-        except Exception as e:
-            self.send_response(500)
-            self._send_cors_headers()
-            self.send_header("Content-Type", "text/plain")
-            self.end_headers()
-            self.wfile.write(f"Error generating H2H page: {e}".encode("utf-8"))
 
     def _serve_league_data(self):
         """Return derived league stats as JSON.
@@ -618,10 +583,10 @@ class LeagueHandler(BaseHTTPRequestHandler):
 
 def main():
     server = HTTPServer(("0.0.0.0", PORT), LeagueHandler)
-    print(f"MTG League Server starting...")
-    print(f"Dashboard: http://localhost:{PORT}/")
+    print(f"MTG League API Server starting...")
     print(f"API:       http://localhost:{PORT}/api/leagues")
     print(f"Leagues:   {simulate.LEAGUES_DIR}")
+    print(f"Frontend:  http://localhost:5173/ (React dev server)")
     print(f"Press Ctrl+C to stop.")
     print()
     try:
