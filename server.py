@@ -34,6 +34,18 @@ class LeagueHandler(BaseHTTPRequestHandler):
         """Get the data file path for the requested or active league."""
         return simulate.get_league_data_path(league_id)
 
+    def _send_cors_headers(self):
+        """Send CORS headers to allow requests from the React dev server."""
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+
+    def do_OPTIONS(self):
+        """Handle CORS preflight requests."""
+        self.send_response(204)
+        self._send_cors_headers()
+        self.end_headers()
+
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path
@@ -78,12 +90,14 @@ class LeagueHandler(BaseHTTPRequestHandler):
             league_id = self._get_requested_league_id()
             html = simulate.run_full_pipeline(server_mode=True, league_id=league_id)
             self.send_response(200)
+            self._send_cors_headers()
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(html.encode("utf-8"))))
             self.end_headers()
             self.wfile.write(html.encode("utf-8"))
         except Exception as e:
             self.send_response(500)
+            self._send_cors_headers()
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
             self.wfile.write(f"Error generating dashboard: {e}".encode("utf-8"))
@@ -93,12 +107,14 @@ class LeagueHandler(BaseHTTPRequestHandler):
         try:
             html = simulate.generate_cumulative_page(year=2026, server_mode=True)
             self.send_response(200)
+            self._send_cors_headers()
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(html.encode("utf-8"))))
             self.end_headers()
             self.wfile.write(html.encode("utf-8"))
         except Exception as e:
             self.send_response(500)
+            self._send_cors_headers()
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
             self.wfile.write(f"Error generating cumulative page: {e}".encode("utf-8"))
@@ -108,21 +124,31 @@ class LeagueHandler(BaseHTTPRequestHandler):
         try:
             html = simulate.generate_alltime_page(server_mode=True)
             self.send_response(200)
+            self._send_cors_headers()
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(html.encode("utf-8"))))
             self.end_headers()
             self.wfile.write(html.encode("utf-8"))
         except Exception as e:
             self.send_response(500)
+            self._send_cors_headers()
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
             self.wfile.write(f"Error generating all-time page: {e}".encode("utf-8"))
 
     def _serve_simulation(self):
-        """Run Monte Carlo simulation and return results as JSON."""
+        """Run Monte Carlo simulation and return results as JSON.
+
+        Includes _league_info and _all_leagues alongside the simulation results
+        so the frontend has full league context in a single request.
+        """
         try:
             league_id = self._get_requested_league_id()
             result = simulate.run_simulation_api(league_id=league_id)
+            league_info = simulate.get_league_info(league_id)
+            leagues_config = simulate.load_leagues_config()
+            result["_league_info"] = league_info
+            result["_all_leagues"] = leagues_config["leagues"]
             self._send_json_response(200, result)
         except Exception as e:
             self._send_json_error(500, str(e))
@@ -132,28 +158,39 @@ class LeagueHandler(BaseHTTPRequestHandler):
         try:
             html = simulate.generate_h2h_page(server_mode=True)
             self.send_response(200)
+            self._send_cors_headers()
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(html.encode("utf-8"))))
             self.end_headers()
             self.wfile.write(html.encode("utf-8"))
         except Exception as e:
             self.send_response(500)
+            self._send_cors_headers()
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
             self.wfile.write(f"Error generating H2H page: {e}".encode("utf-8"))
 
     def _serve_league_data(self):
-        """Return the current league data JSON."""
+        """Return derived league stats as JSON.
+
+        Loads raw league data, runs derive_stats() on it, then attaches
+        _league_info (the config entry for this league) and _all_leagues
+        (the full list from leagues_config.json).
+
+        Note: derive_stats() uses integer dict keys for per_week_omw,
+        per_week_mwp, per_week_records, and per_week_opponents (week numbers).
+        Python's json.dumps() converts integer keys to strings, so the frontend
+        should treat those objects as string-keyed (e.g. {"1": ..., "2": ...}).
+        """
         try:
             league_id = self._get_requested_league_id()
-            data_file = self._get_data_file_for_league(league_id)
-            with open(data_file, "r") as f:
-                data = f.read()
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(data.encode("utf-8"))))
-            self.end_headers()
-            self.wfile.write(data.encode("utf-8"))
+            raw_data = simulate.load_league_data(league_id=league_id)
+            result = simulate.derive_stats(raw_data)
+            league_info = simulate.get_league_info(league_id)
+            leagues_config = simulate.load_leagues_config()
+            result["_league_info"] = league_info
+            result["_all_leagues"] = leagues_config["leagues"]
+            self._send_json_response(200, result)
         except Exception as e:
             self._send_json_error(500, str(e))
 
@@ -565,6 +602,7 @@ class LeagueHandler(BaseHTTPRequestHandler):
     def _send_json_response(self, code, obj):
         body = json.dumps(obj).encode("utf-8")
         self.send_response(code)
+        self._send_cors_headers()
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
