@@ -1,34 +1,34 @@
-import { useSimulation } from '@/hooks/useSimulation'
-import type { DerivedLeague, SimPlayerResult } from '@/types'
+import { useSimulation } from "@/hooks/useSimulation";
+import type { DerivedLeague, SimPlayerResult } from "@/types";
 
 interface PlayoffProbSectionProps {
-  league: DerivedLeague
+  league: DerivedLeague;
 }
 
 function barColor(prob: number): string {
-  if (prob >= 75) return '#2ecc71'
-  if (prob >= 50) return '#f1c40f'
-  if (prob >= 25) return '#e67e22'
-  return '#e74c3c'
+  if (prob >= 75) return "#2ecc71";
+  if (prob >= 50) return "#f1c40f";
+  if (prob >= 25) return "#e67e22";
+  return "#e74c3c";
 }
 
 function PlayoffProbCard({ player }: { player: SimPlayerResult }) {
-  const prob = player.playoff_prob
-  const color = barColor(prob)
+  const prob = player.playoff_prob;
+  const color = barColor(prob);
 
-  let badge: React.ReactNode = null
-  if (player.status === 'clinched' || prob >= 99.9) {
+  let badge: React.ReactNode = null;
+  if (player.status === "clinched" || prob >= 99.9) {
     badge = (
       <span className="bg-[#2ecc71] text-[#1a1a2e] text-xs px-2 py-0.5 rounded font-bold uppercase">
         CLINCHED
       </span>
-    )
-  } else if (player.status === 'eliminated' || prob === 0) {
+    );
+  } else if (player.status === "eliminated" || prob === 0) {
     badge = (
       <span className="bg-[#e74c3c] text-[#1a1a2e] text-xs px-2 py-0.5 rounded font-bold uppercase">
         ELIMINATED
       </span>
-    )
+    );
   }
 
   return (
@@ -54,20 +54,23 @@ function PlayoffProbCard({ player }: { player: SimPlayerResult }) {
         <span>GW%: {(player.gwp * 100).toFixed(1)}%</span>
       </div>
     </div>
-  )
+  );
 }
 
-export default function PlayoffProbSection({ league }: PlayoffProbSectionProps) {
-  const isCompleted = league._league_info.status === 'completed'
-  const leagueId = league._league_info.id
+export default function PlayoffProbSection({
+  league,
+}: PlayoffProbSectionProps) {
+  const isCompleted = league._league_info.status === "completed";
+  const leagueId = league._league_info.id;
 
-  const { data, refetch, isFetching, isSuccess } = useSimulation(leagueId)
+  const { data, refetch, isFetching, isSuccess } = useSimulation(leagueId);
 
-  if (isCompleted || league.playoff_spots === 0) return null
+  if (isCompleted || league.playoff_spots === 0) return null;
 
-  const sorted = isSuccess && data?.players
-    ? [...data.players].sort((a, b) => b.playoff_prob - a.playoff_prob)
-    : []
+  const sorted =
+    isSuccess && data?.players
+      ? [...data.players].sort((a, b) => b.playoff_prob - a.playoff_prob)
+      : [];
 
   return (
     <div className="bg-[#16213e] rounded-xl p-6 border border-[#0f3460] mb-6">
@@ -94,7 +97,7 @@ export default function PlayoffProbSection({ league }: PlayoffProbSectionProps) 
       )}
 
       {isSuccess && sorted.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="flex flex-col gap-4">
           {sorted.map((p) => (
             <PlayoffProbCard key={p.name} player={p} />
           ))}
@@ -105,5 +108,5 @@ export default function PlayoffProbSection({ league }: PlayoffProbSectionProps) 
         <p className="text-[#e74c3c] text-center">{data.error}</p>
       )}
     </div>
-  )
+  );
 }

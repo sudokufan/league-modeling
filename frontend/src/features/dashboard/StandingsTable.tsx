@@ -1,6 +1,6 @@
 import type { DerivedLeague, PlayerSimResult } from "@/types";
 import { sortStandings } from "@/lib/standings";
-import { bestNScore, noByeWeeklyScores } from "@/lib/scoring";
+import { bestNScore, maxPossibleBestN, noByeWeeklyScores } from "@/lib/scoring";
 
 interface StandingsTableProps {
   league: DerivedLeague;
@@ -110,8 +110,11 @@ export default function StandingsTable({
               >
                 No-Bye
               </th>
-              <th className="bg-[#0f3460] text-[#e0e0e0] text-[0.82em] uppercase tracking-wider px-2 py-2.5 text-center font-semibold">
-                OMW%
+              <th
+                className="bg-[#0f3460] text-[#e0e0e0] text-[0.82em] uppercase tracking-wider px-2 py-2.5 text-center font-semibold"
+                title={`Best possible Best-${best_of_n} (scoring 9 every remaining week)`}
+              >
+                Max
               </th>
             </tr>
           </thead>
@@ -124,7 +127,7 @@ export default function StandingsTable({
               const best = bestNScore(scores, best_of_n);
               const noByeScores = noByeWeeklyScores(scores, player, matches);
               const noByeBest = bestNScore(noByeScores, best_of_n);
-              const omw = overall_omw[player] ?? 0;
+              const maxPossible = maxPossibleBestN(scores, weeks_completed, total_weeks, best_of_n);
               const isChamp = player === defendingChampion;
 
               return (
@@ -194,7 +197,7 @@ export default function StandingsTable({
                     )}
                   </td>
                   <td className="px-2 py-2 text-center border-b border-[#1a1a2e] text-[#aaa] text-[0.9em]">
-                    {(omw * 100).toFixed(1)}%
+                    {maxPossible}
                   </td>
                 </tr>
               );
