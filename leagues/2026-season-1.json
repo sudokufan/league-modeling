@@ -985,6 +985,102 @@
       "player_b": "Georgia",
       "games_a": 2,
       "games_b": 0
+    },
+    {
+      "week": 9,
+      "round": 1,
+      "player_a": "Georgia",
+      "player_b": "Martin",
+      "games_a": 1,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 1,
+      "player_a": "Alex",
+      "player_b": "Dom",
+      "games_a": 0,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 1,
+      "player_a": "Roland",
+      "player_b": "Brandon",
+      "games_a": 2,
+      "games_b": 1
+    },
+    {
+      "week": 9,
+      "round": 1,
+      "player_a": "Stephen",
+      "player_b": null,
+      "games_a": 2,
+      "games_b": 0
+    },
+    {
+      "week": 9,
+      "round": 2,
+      "player_a": "Georgia",
+      "player_b": "Alex",
+      "games_a": 0,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 2,
+      "player_a": "Roland",
+      "player_b": "Martin",
+      "games_a": 2,
+      "games_b": 1
+    },
+    {
+      "week": 9,
+      "round": 2,
+      "player_a": "Brandon",
+      "player_b": null,
+      "games_a": 2,
+      "games_b": 0
+    },
+    {
+      "week": 9,
+      "round": 2,
+      "player_a": "Dom",
+      "player_b": "Stephen",
+      "games_a": 2,
+      "games_b": 1
+    },
+    {
+      "week": 9,
+      "round": 3,
+      "player_a": "Dom",
+      "player_b": "Roland",
+      "games_a": 0,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 3,
+      "player_a": "Stephen",
+      "player_b": "Brandon",
+      "games_a": 1,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 3,
+      "player_a": "Alex",
+      "player_b": "Martin",
+      "games_a": 1,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 3,
+      "player_a": "Georgia",
+      "player_b": null,
+      "games_a": 2,
+      "games_b": 0
     }
   ]
 }
