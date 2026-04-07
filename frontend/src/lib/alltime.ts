@@ -35,6 +35,7 @@ interface PlayerCareer {
   weeklyScoresAll: number[]
   highestWeekly: number
   totalBestN: number
+  highestBestN: number
   bestWeekRank: number
   bestWeekTied: boolean
   bestFinishes: { league: string; position: number }[]
@@ -43,16 +44,33 @@ interface PlayerCareer {
   maxUndefeatedStreak: number
   top4: number
   titles: number
+  // Match-level stats
+  matchWins: number
+  matchLosses: number
+  matchDraws: number
+  gameWins: number
+  gameLosses: number
+  sweeps: number // 2-0 match wins
+  matchWinStreak: number
+  maxMatchWinStreak: number
+  byes: number
+  // Rivalry tracking
+  h2h: Map<string, { wins: number; losses: number; total: number }>
 }
 
 function newPlayerCareer(): PlayerCareer {
   return {
     leagues: 0, weeksPlayed: 0, nines: 0,
-    weeklyScoresAll: [], highestWeekly: 0, totalBestN: 0,
+    weeklyScoresAll: [], highestWeekly: 0, totalBestN: 0, highestBestN: 0,
     bestWeekRank: 999, bestWeekTied: false,
     bestFinishes: [], completedFinishes: [],
     maxAttendanceStreak: 0, maxUndefeatedStreak: 0,
     top4: 0, titles: 0,
+    matchWins: 0, matchLosses: 0, matchDraws: 0,
+    gameWins: 0, gameLosses: 0,
+    sweeps: 0, matchWinStreak: 0, maxMatchWinStreak: 0,
+    byes: 0,
+    h2h: new Map(),
   }
 }
 
@@ -155,7 +173,9 @@ export function computeAllTimeStats(
       if (playedScores.length > 0) {
         pc.highestWeekly = Math.max(pc.highestWeekly, Math.max(...playedScores))
       }
-      pc.totalBestN += bestNScore(scores, bestOfN)
+      const leagueBestN = bestNScore(scores, bestOfN)
+      pc.totalBestN += leagueBestN
+      pc.highestBestN = Math.max(pc.highestBestN, leagueBestN)
 
       const posIdx = standings.indexOf(p)
       if (posIdx >= 0) {
@@ -163,6 +183,125 @@ export function computeAllTimeStats(
         pc.bestFinishes.push({ league: displayName, position: pos })
         if (isCompleted) {
           pc.completedFinishes.push({ league: displayName, position: pos })
+        }
+      }
+    }
+
+    // Process matches for match-level stats
+    const leagueMatches = league.matches ?? []
+    // Track match results for win streak computation within this league
+    const weekMatchResults = new Map<string, { week: number; round: number; result: 'W' | 'L' | 'D' }[]>()
+
+    for (const m of leagueMatches) {
+      const pa = m.player_a
+      const pb = m.player_b
+      const ga = m.games_a ?? 0
+      const gb = m.games_b ?? 0
+
+      if (!pb || pb === '-' || pb === '') {
+        // Bye
+        if (!unofficial.has(pa)) {
+          const pc = getOrCreate(playerCareer, pa)
+          pc.byes += 1
+        }
+        continue
+      }
+
+      const paOfficial = !unofficial.has(pa)
+      const pbOfficial = !unofficial.has(pb)
+
+      if (paOfficial) {
+        const pc = getOrCreate(playerCareer, pa)
+        pc.gameWins += ga
+        pc.gameLosses += gb
+        if (!weekMatchResults.has(pa)) weekMatchResults.set(pa, [])
+      }
+      if (pbOfficial) {
+        const pc = getOrCreate(playerCareer, pb)
+        pc.gameWins += gb
+        pc.gameLosses += ga
+        if (!weekMatchResults.has(pb)) weekMatchResults.set(pb, [])
+      }
+
+      if (ga > gb) {
+        if (paOfficial) {
+          const pc = getOrCreate(playerCareer, pa)
+          pc.matchWins += 1
+          if (ga === 2 && gb === 0) pc.sweeps += 1
+          weekMatchResults.get(pa)!.push({ week: m.week, round: m.round, result: 'W' })
+        }
+        if (pbOfficial) {
+          const pc = getOrCreate(playerCareer, pb)
+          pc.matchLosses += 1
+          weekMatchResults.get(pb)!.push({ week: m.week, round: m.round, result: 'L' })
+        }
+        // H2H
+        if (paOfficial && pbOfficial) {
+          const h2hA = getOrCreate(playerCareer, pa).h2h
+          const recA = h2hA.get(pb) ?? { wins: 0, losses: 0, total: 0 }
+          recA.wins += 1; recA.total += 1
+          h2hA.set(pb, recA)
+          const h2hB = getOrCreate(playerCareer, pb).h2h
+          const recB = h2hB.get(pa) ?? { wins: 0, losses: 0, total: 0 }
+          recB.losses += 1; recB.total += 1
+          h2hB.set(pa, recB)
+        }
+      } else if (gb > ga) {
+        if (pbOfficial) {
+          const pc = getOrCreate(playerCareer, pb)
+          pc.matchWins += 1
+          if (gb === 2 && ga === 0) pc.sweeps += 1
+          weekMatchResults.get(pb)!.push({ week: m.week, round: m.round, result: 'W' })
+        }
+        if (paOfficial) {
+          const pc = getOrCreate(playerCareer, pa)
+          pc.matchLosses += 1
+          weekMatchResults.get(pa)!.push({ week: m.week, round: m.round, result: 'L' })
+        }
+        if (paOfficial && pbOfficial) {
+          const h2hB = getOrCreate(playerCareer, pb).h2h
+          const recB = h2hB.get(pa) ?? { wins: 0, losses: 0, total: 0 }
+          recB.wins += 1; recB.total += 1
+          h2hB.set(pa, recB)
+          const h2hA = getOrCreate(playerCareer, pa).h2h
+          const recA = h2hA.get(pb) ?? { wins: 0, losses: 0, total: 0 }
+          recA.losses += 1; recA.total += 1
+          h2hA.set(pb, recA)
+        }
+      } else {
+        if (paOfficial) {
+          const pc = getOrCreate(playerCareer, pa)
+          pc.matchDraws += 1
+          weekMatchResults.get(pa)!.push({ week: m.week, round: m.round, result: 'D' })
+        }
+        if (pbOfficial) {
+          const pc = getOrCreate(playerCareer, pb)
+          pc.matchDraws += 1
+          weekMatchResults.get(pb)!.push({ week: m.week, round: m.round, result: 'D' })
+        }
+        if (paOfficial && pbOfficial) {
+          const h2hA = getOrCreate(playerCareer, pa).h2h
+          const recA = h2hA.get(pb) ?? { wins: 0, losses: 0, total: 0 }
+          recA.total += 1
+          h2hA.set(pb, recA)
+          const h2hB = getOrCreate(playerCareer, pb).h2h
+          const recB = h2hB.get(pa) ?? { wins: 0, losses: 0, total: 0 }
+          recB.total += 1
+          h2hB.set(pa, recB)
+        }
+      }
+    }
+
+    // Compute match win streaks per player for this league (sorted by week/round)
+    for (const [p, results] of weekMatchResults) {
+      results.sort((a, b) => a.week - b.week || a.round - b.round)
+      const pc = playerCareer.get(p)!
+      for (const r of results) {
+        if (r.result === 'W') {
+          pc.matchWinStreak += 1
+          pc.maxMatchWinStreak = Math.max(pc.maxMatchWinStreak, pc.matchWinStreak)
+        } else {
+          pc.matchWinStreak = 0
         }
       }
     }
@@ -205,33 +344,112 @@ export function computeAllTimeStats(
     pc.titles = pc.completedFinishes.filter(f => f.position === 1).length
   }
 
-  // Build records
+  // Build records — only show records with a single definitive leader (no ties)
   const records: RecordCard[] = []
   const allPlayers = [...playerCareer.keys()]
 
-  function findLeaders(keyFn: (p: string) => number, minVal = 1): { leaders: string[]; val: number } {
+  function findSoleLeader(keyFn: (p: string) => number, minVal = 1): { leader: string; val: number } | null {
     const bestVal = Math.max(...allPlayers.map(keyFn))
-    if (bestVal < minVal) return { leaders: [], val: bestVal }
-    return { leaders: allPlayers.filter(p => keyFn(p) === bestVal), val: bestVal }
+    if (bestVal < minVal) return null
+    const leaders = allPlayers.filter(p => keyFn(p) === bestVal)
+    if (leaders.length !== 1) return null
+    return { leader: leaders[0], val: bestVal }
   }
 
-  let r = findLeaders(p => playerCareer.get(p)!.maxAttendanceStreak)
-  if (r.leaders.length) records.push({ title: 'Longest Attendance Streak', player: r.leaders.join(', '), value: `${r.val} weeks` })
+  // Find sole leader for float stats (use epsilon for comparison)
+  function findSoleLeaderFloat(keyFn: (p: string) => number | null): { leader: string; val: number } | null {
+    const eligible = allPlayers.filter(p => keyFn(p) !== null)
+    if (eligible.length === 0) return null
+    const bestVal = Math.max(...eligible.map(p => keyFn(p)!))
+    if (bestVal < 0.001) return null
+    const leaders = eligible.filter(p => Math.abs(keyFn(p)! - bestVal) < 0.0001)
+    if (leaders.length !== 1) return null
+    return { leader: leaders[0], val: bestVal }
+  }
 
-  r = findLeaders(p => playerCareer.get(p)!.maxUndefeatedStreak)
-  if (r.leaders.length) records.push({ title: 'Longest Undefeated Streak', player: r.leaders.join(', '), value: `${r.val} weeks` })
+  let r = findSoleLeader(p => playerCareer.get(p)!.maxAttendanceStreak)
+  if (r) records.push({ title: 'Longest Attendance Streak', player: r.leader, value: `${r.val} weeks` })
 
-  r = findLeaders(p => playerCareer.get(p)!.nines)
-  if (r.leaders.length) records.push({ title: 'Most Perfect Nights (9 pts)', player: r.leaders.join(', '), value: String(r.val) })
+  r = findSoleLeader(p => playerCareer.get(p)!.maxUndefeatedStreak)
+  if (r) records.push({ title: 'Longest Undefeated Streak', player: r.leader, value: `${r.val} weeks` })
 
-  r = findLeaders(p => playerCareer.get(p)!.weeksPlayed)
-  if (r.leaders.length) records.push({ title: 'Most Weeks Played', player: r.leaders.join(', '), value: String(r.val) })
+  r = findSoleLeader(p => playerCareer.get(p)!.nines)
+  if (r) records.push({ title: 'Most Perfect Nights (9 pts)', player: r.leader, value: String(r.val) })
 
-  r = findLeaders(p => playerCareer.get(p)!.top4)
-  if (r.leaders.length) records.push({ title: 'Most Top-4 Finishes', player: r.leaders.join(', '), value: String(r.val) })
+  r = findSoleLeader(p => playerCareer.get(p)!.weeksPlayed)
+  if (r) records.push({ title: 'Most Weeks Played', player: r.leader, value: String(r.val) })
 
-  r = findLeaders(p => playerCareer.get(p)!.titles)
-  if (r.leaders.length) records.push({ title: 'Most League Titles (1st Place)', player: r.leaders.join(', '), value: String(r.val) })
+  r = findSoleLeader(p => playerCareer.get(p)!.top4)
+  if (r) records.push({ title: 'Most Top-4 Finishes', player: r.leader, value: String(r.val) })
+
+  r = findSoleLeader(p => playerCareer.get(p)!.titles)
+  if (r) records.push({ title: 'Most League Titles (1st Place)', player: r.leader, value: String(r.val) })
+
+  r = findSoleLeader(p => playerCareer.get(p)!.leagues)
+  if (r) records.push({ title: 'Most Leagues Played', player: r.leader, value: String(r.val) })
+
+  r = findSoleLeader(p => playerCareer.get(p)!.highestBestN)
+  if (r) records.push({ title: 'Highest Points Finish', player: r.leader, value: String(r.val) })
+
+  // Match-based records (only meaningful if we have match data)
+  const hasMatchData = allPlayers.some(p => {
+    const pc = playerCareer.get(p)!
+    return pc.matchWins + pc.matchLosses + pc.matchDraws > 0
+  })
+
+  if (hasMatchData) {
+    const MIN_MATCHES = 9 // at least 3 weeks of matches
+
+    const rFloat = findSoleLeaderFloat(p => {
+      const pc = playerCareer.get(p)!
+      const total = pc.matchWins + pc.matchLosses + pc.matchDraws
+      if (total < MIN_MATCHES) return null
+      return (pc.matchWins + pc.matchDraws * 0.5) / total
+    })
+    if (rFloat) records.push({ title: 'Best Match Win Rate', player: rFloat.leader, value: `${(rFloat.val * 100).toFixed(0)}%` })
+
+    const rFloat2 = findSoleLeaderFloat(p => {
+      const pc = playerCareer.get(p)!
+      const totalGames = pc.gameWins + pc.gameLosses
+      if (totalGames < MIN_MATCHES * 2) return null
+      return pc.gameWins / totalGames
+    })
+    if (rFloat2) records.push({ title: 'Best Game Win Rate', player: rFloat2.leader, value: `${(rFloat2.val * 100).toFixed(0)}%` })
+
+    r = findSoleLeader(p => playerCareer.get(p)!.sweeps)
+    if (r) records.push({ title: 'Most 2-0 Sweeps', player: r.leader, value: String(r.val) })
+
+    r = findSoleLeader(p => playerCareer.get(p)!.maxMatchWinStreak)
+    if (r) records.push({ title: 'Longest Match Win Streak', player: r.leader, value: `${r.val} matches` })
+
+    r = findSoleLeader(p => playerCareer.get(p)!.byes)
+    if (r) records.push({ title: 'Most Byes Received', player: r.leader, value: String(r.val) })
+
+    // Biggest Rivalry — pair with most total matches, sole leader
+    const pairCounts = new Map<string, { key: string; playerA: string; playerB: string; total: number }>()
+    for (const [p, pc] of playerCareer) {
+      for (const [opp, rec] of pc.h2h) {
+        const key = [p, opp].sort().join(' vs ')
+        if (!pairCounts.has(key)) {
+          pairCounts.set(key, { key, playerA: p, playerB: opp, total: rec.total })
+        }
+      }
+    }
+    if (pairCounts.size > 0) {
+      const pairs = [...pairCounts.values()]
+      const maxTotal = Math.max(...pairs.map(p => p.total))
+      const topPairs = pairs.filter(p => p.total === maxTotal)
+      if (topPairs.length === 1 && maxTotal >= 3) {
+        const pair = topPairs[0]
+        const recA = playerCareer.get(pair.playerA)!.h2h.get(pair.playerB)!
+        records.push({
+          title: 'Biggest Rivalry',
+          player: `${pair.playerA} vs ${pair.playerB}`,
+          value: `${recA.wins}-${recA.losses} (${maxTotal} matches)`,
+        })
+      }
+    }
+  }
 
   // Career stats table
   const careerStats: CareerEntry[] = allPlayers

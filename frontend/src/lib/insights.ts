@@ -40,22 +40,25 @@ export function generateInsights(league: DerivedLeague): InsightCard[] {
     return (omw[b] ?? 0) - (omw[a] ?? 0)
   })
 
-  // 1. Best win rate (min 3 matches played)
-  let bestWrPlayer: string | null = null
+  // 1. Best win rate (min 3 matches played) — only show if sole leader
   let bestWr = 0
+  let bestWrPlayers: string[] = []
   for (const p of officialPlayers) {
     const s = overall_stats[p]
     if (!s) continue
     const total = s.w + s.l + s.d
     if (total >= 3) {
       const wr = (s.w + s.d * 0.5) / total
-      if (wr > bestWr) {
+      if (wr > bestWr + 0.0001) {
         bestWr = wr
-        bestWrPlayer = p
+        bestWrPlayers = [p]
+      } else if (Math.abs(wr - bestWr) < 0.0001) {
+        bestWrPlayers.push(p)
       }
     }
   }
-  if (bestWrPlayer) {
+  if (bestWrPlayers.length === 1) {
+    const bestWrPlayer = bestWrPlayers[0]
     const s = overall_stats[bestWrPlayer]
     insights.push({
       title: 'Highest Win Rate',
@@ -72,13 +75,16 @@ export function generateInsights(league: DerivedLeague): InsightCard[] {
     if (nines > 0) nineCounts[p] = nines
   }
   if (Object.keys(nineCounts).length > 0) {
-    const topNine = Object.entries(nineCounts).sort((a, b) => b[1] - a[1])[0][0]
-    insights.push({
-      title: 'Most Perfect Nights',
-      player: topNine,
-      value: String(nineCounts[topNine]),
-      detail: 'Undefeated 9-point weeks',
-    })
+    const sorted = Object.entries(nineCounts).sort((a, b) => b[1] - a[1])
+    // Only show if sole leader
+    if (sorted.length === 1 || sorted[0][1] !== sorted[1][1]) {
+      insights.push({
+        title: 'Most Perfect Nights',
+        player: sorted[0][0],
+        value: String(sorted[0][1]),
+        detail: 'Undefeated 9-point weeks',
+      })
+    }
   }
 
   // 3. Best attendance (Iron Player)
@@ -87,13 +93,15 @@ export function generateInsights(league: DerivedLeague): InsightCard[] {
     attendCounts[p] = (weekly_scores[p] ?? []).filter(s => s !== null).length
   }
   if (Object.keys(attendCounts).length > 0) {
-    const bestAttend = Object.entries(attendCounts).sort((a, b) => b[1] - a[1])[0][0]
-    insights.push({
-      title: 'Iron Player',
-      player: bestAttend,
-      value: `${attendCounts[bestAttend]}/${weeks_completed}`,
-      detail: 'Weeks attended',
-    })
+    const sorted = Object.entries(attendCounts).sort((a, b) => b[1] - a[1])
+    if (sorted.length === 1 || sorted[0][1] !== sorted[1][1]) {
+      insights.push({
+        title: 'Iron Player',
+        player: sorted[0][0],
+        value: `${sorted[0][1]}/${weeks_completed}`,
+        detail: 'Weeks attended',
+      })
+    }
   }
 
   // 4. Worst to First (min 4 weeks completed)
@@ -116,18 +124,21 @@ export function generateInsights(league: DerivedLeague): InsightCard[] {
     }
 
     let bestClimb = 0
-    let climber: string | null = null
+    let climbers: string[] = []
     let worstAt = 0
     for (const p of officialPlayers) {
       const climb = worstRank[p] - finalRank[p]
       if (climb > bestClimb) {
         bestClimb = climb
-        climber = p
+        climbers = [p]
         worstAt = worstRank[p]
+      } else if (climb === bestClimb && climb > 0) {
+        climbers.push(p)
       }
     }
 
-    if (climber && bestClimb > 1) {
+    if (climbers.length === 1 && bestClimb > 1) {
+      const climber = climbers[0]
       const ordinal = (n: number): string => {
         if (n > 3) return `${n}th`
         return ['st', 'nd', 'rd'][n - 1] ? `${n}${['st', 'nd', 'rd'][n - 1]}` : `${n}th`
@@ -228,13 +239,14 @@ export function generateInsights(league: DerivedLeague): InsightCard[] {
       const leaders = Object.entries(almostThereCounts)
         .filter(([, count]) => count === topCount)
         .map(([p]) => p)
-        .sort()
-      insights.push({
-        title: 'Almost There',
-        player: leaders.join(', '),
-        value: String(topCount),
-        detail: 'Started 2-0, then lost Round 3',
-      })
+      if (leaders.length === 1) {
+        insights.push({
+          title: 'Almost There',
+          player: leaders[0],
+          value: String(topCount),
+          detail: 'Started 2-0, then lost Round 3',
+        })
+      }
     }
   }
 
