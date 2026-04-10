@@ -131,6 +131,18 @@ export default function StandingsTable({
               >
                 Max
               </th>
+              <th
+                className="bg-[#0f3460] text-[#e0e0e0] text-[0.82em] uppercase tracking-wider px-2 py-2.5 text-center font-semibold"
+                title="Opponent Match Win Percentage"
+              >
+                OMW%
+              </th>
+              <th
+                className="bg-[#0f3460] text-[#e0e0e0] text-[0.82em] uppercase tracking-wider px-2 py-2.5 text-center font-semibold"
+                title="Game Win Percentage"
+              >
+                GW%
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -204,6 +216,12 @@ export default function StandingsTable({
                   </td>
                   <td className="px-2 py-2 text-center border-b border-[#1a1a2e] text-[#aaa] text-[0.9em]">
                     {maxPossible}
+                  </td>
+                  <td className="px-2 py-2 text-center border-b border-[#1a1a2e] text-[#aaa] text-[0.9em]">
+                    {((overall_omw[player] ?? 0) * 100).toFixed(1)}%
+                  </td>
+                  <td className="px-2 py-2 text-center border-b border-[#1a1a2e] text-[#aaa] text-[0.9em]">
+                    {((overall_stats[player]?.gwp ?? 0) * 100).toFixed(1)}%
                   </td>
                 </tr>
               );
