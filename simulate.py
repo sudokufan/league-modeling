@@ -584,15 +584,14 @@ def run_simulation(league: dict) -> dict:
         standings = []
         for p in players:
             b7 = best_n_score(sim_scores[p], best_of_n)
-            tmp = total_match_points(sim_scores[p])
             omw = sim_omw[p]
             gwp = overall_stats[p]["gwp"]
-            standings.append((p, b7, tmp, omw, gwp))
+            standings.append((p, b7, omw, gwp))
 
-        # Tiebreaker: best-7 desc, total MP desc, OMW desc, GWP desc
-        standings.sort(key=lambda x: (x[1], x[2], x[3], x[4]), reverse=True)
+        # Tiebreaker: best-7 desc, OMW desc, GWP desc
+        standings.sort(key=lambda x: (x[1], x[2], x[3]), reverse=True)
 
-        for i, (p, b7, tmp, omw, gwp) in enumerate(standings):
+        for i, (p, b7, omw, gwp) in enumerate(standings):
             pos = i + 1
             position_counts[p][pos] += 1
             if pos <= playoff_spots:

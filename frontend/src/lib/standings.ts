@@ -1,9 +1,9 @@
 import type { DerivedLeague, PlayerStats, PlayerSimResult } from '@/types'
-import { bestNScore, totalMatchPoints } from './scoring'
+import { bestNScore } from './scoring'
 
 /**
  * Sort official players by standings tiebreakers:
- * (current_best_n, total_match_pts, overall_omw, gwp) descending.
+ * (current_best_n, overall_omw, gwp) descending.
  * Excludes unofficial players.
  * Returns sorted array of player names.
  */
@@ -23,10 +23,6 @@ export function sortStandings(
     const bBestN = bestNScore(weeklyScores[b] ?? [], bestOfN)
     if (bBestN !== aBestN) return bBestN - aBestN
 
-    const aTmp = totalMatchPoints(weeklyScores[a] ?? [])
-    const bTmp = totalMatchPoints(weeklyScores[b] ?? [])
-    if (bTmp !== aTmp) return bTmp - aTmp
-
     const aOmw = overallOmw[a] ?? 0
     const bOmw = overallOmw[b] ?? 0
     if (bOmw !== aOmw) return bOmw - aOmw
@@ -39,7 +35,7 @@ export function sortStandings(
 
 /**
  * For each week 1..totalWeeks, return the top-N official players sorted by
- * (bestNScore through that week, totalMatchPoints through that week, avgOmwThroughWeek).
+ * (bestNScore through that week, avgOmwThroughWeek).
  * Returns null for future weeks (w > weeksCompleted).
  *
  * perWeekOmw keys are strings ("1", "2", ...) as they come from JSON.
@@ -80,10 +76,6 @@ export function weeklyTopN(
       const aBestN = bestNScore(scoresA.slice(0, w), bestOfN)
       const bBestN = bestNScore(scoresB.slice(0, w), bestOfN)
       if (bBestN !== aBestN) return bBestN - aBestN
-
-      const aTmp = totalMatchPoints(scoresA.slice(0, w))
-      const bTmp = totalMatchPoints(scoresB.slice(0, w))
-      if (bTmp !== aTmp) return bTmp - aTmp
 
       return omwThrough(b) - omwThrough(a)
     })
