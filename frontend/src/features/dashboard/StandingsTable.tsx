@@ -67,9 +67,12 @@ export default function StandingsTable({
   }
 
   // A player has clinched playoffs if fewer than playoff_spots other official
-  // players could possibly reach or exceed their current best-N score
+  // players could possibly reach or exceed their current best-N score.
+  // When the season is complete, all top-N players are definitively in.
+  const seasonComplete = weeks_completed >= total_weeks;
   function hasClinched(player: string): boolean {
     if (unofficialSet.has(player)) return false;
+    if (seasonComplete) return true;
     const myBest = playerBest[player];
     const couldOvertake = officialPlayers.filter(
       (p) => p !== player && playerMax[p] >= myBest,
@@ -125,24 +128,30 @@ export default function StandingsTable({
               <th className="bg-[#0f3460] text-[#e0e0e0] text-[0.82em] uppercase tracking-wider px-2 py-2.5 text-center font-semibold">
                 Best-{best_of_n}
               </th>
-              <th
-                className="bg-[#0f3460] text-[#e0e0e0] text-[0.82em] uppercase tracking-wider px-2 py-2.5 text-center font-semibold"
-                title={`Best possible Best-${best_of_n} (scoring 9 every remaining week)`}
-              >
-                Max
-              </th>
-              <th
-                className="bg-[#0f3460] text-[#e0e0e0] text-[0.82em] uppercase tracking-wider px-2 py-2.5 text-center font-semibold"
-                title="Opponent Match Win Percentage"
-              >
-                OMW%
-              </th>
-              <th
-                className="bg-[#0f3460] text-[#e0e0e0] text-[0.82em] uppercase tracking-wider px-2 py-2.5 text-center font-semibold"
-                title="Game Win Percentage"
-              >
-                GW%
-              </th>
+              {!seasonComplete && (
+                <th
+                  className="bg-[#0f3460] text-[#e0e0e0] text-[0.82em] uppercase tracking-wider px-2 py-2.5 text-center font-semibold"
+                  title={`Best possible Best-${best_of_n} (scoring 9 every remaining week)`}
+                >
+                  Max
+                </th>
+              )}
+              {seasonComplete && (
+                <>
+                  <th
+                    className="bg-[#0f3460] text-[#e0e0e0] text-[0.82em] uppercase tracking-wider px-2 py-2.5 text-center font-semibold"
+                    title="Opponent Match Win Percentage"
+                  >
+                    OMW%
+                  </th>
+                  <th
+                    className="bg-[#0f3460] text-[#e0e0e0] text-[0.82em] uppercase tracking-wider px-2 py-2.5 text-center font-semibold"
+                    title="Game Win Percentage"
+                  >
+                    GW%
+                  </th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -214,15 +223,21 @@ export default function StandingsTable({
                   <td className="px-2 py-2 text-center border-b border-[#1a1a2e] font-bold text-[#2ecc71] text-[1.05em]">
                     {best}
                   </td>
-                  <td className="px-2 py-2 text-center border-b border-[#1a1a2e] text-[#aaa] text-[0.9em]">
-                    {maxPossible}
-                  </td>
-                  <td className="px-2 py-2 text-center border-b border-[#1a1a2e] text-[#aaa] text-[0.9em]">
-                    {((overall_omw[player] ?? 0) * 100).toFixed(1)}%
-                  </td>
-                  <td className="px-2 py-2 text-center border-b border-[#1a1a2e] text-[#aaa] text-[0.9em]">
-                    {((overall_stats[player]?.gwp ?? 0) * 100).toFixed(1)}%
-                  </td>
+                  {!seasonComplete && (
+                    <td className="px-2 py-2 text-center border-b border-[#1a1a2e] text-[#aaa] text-[0.9em]">
+                      {maxPossible}
+                    </td>
+                  )}
+                  {seasonComplete && (
+                    <>
+                      <td className="px-2 py-2 text-center border-b border-[#1a1a2e] text-[#aaa] text-[0.9em]">
+                        {((overall_omw[player] ?? 0) * 100).toFixed(1)}%
+                      </td>
+                      <td className="px-2 py-2 text-center border-b border-[#1a1a2e] text-[#aaa] text-[0.9em]">
+                        {((overall_stats[player]?.gwp ?? 0) * 100).toFixed(1)}%
+                      </td>
+                    </>
+                  )}
                 </tr>
               );
             })}

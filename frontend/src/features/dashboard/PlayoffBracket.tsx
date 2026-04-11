@@ -1,5 +1,5 @@
 import type { DerivedLeague, PlayerSimResult, PlayoffMatch } from '@/types'
-import { bestNScore } from '@/lib/scoring'
+import { sortStandings } from '@/lib/standings'
 
 interface PlayoffBracketProps {
   league: DerivedLeague
@@ -7,21 +7,14 @@ interface PlayoffBracketProps {
 }
 
 function getSeeds(league: DerivedLeague): string[] {
-  const { players, unofficial_players, weekly_scores, overall_omw, best_of_n } = league
-  const unofficialSet = new Set(unofficial_players ?? [])
-  const official = players.filter((p) => !unofficialSet.has(p))
-
-  return [...official].sort((a, b) => {
-    const aBn = bestNScore(weekly_scores[a] ?? [], best_of_n)
-    const bBn = bestNScore(weekly_scores[b] ?? [], best_of_n)
-    if (bBn !== aBn) return bBn - aBn
-
-    const aTmp = (weekly_scores[a] ?? []).reduce<number>((s, v) => s + (v ?? 0), 0)
-    const bTmp = (weekly_scores[b] ?? []).reduce<number>((s, v) => s + (v ?? 0), 0)
-    if (bTmp !== aTmp) return bTmp - aTmp
-
-    return (overall_omw[b] ?? 0) - (overall_omw[a] ?? 0)
-  })
+  return sortStandings(
+    league.players,
+    league.weekly_scores,
+    league.overall_omw,
+    league.overall_stats,
+    league.unofficial_players ?? [],
+    league.best_of_n
+  )
 }
 
 function getWinner(match?: PlayoffMatch | null): string | null {
