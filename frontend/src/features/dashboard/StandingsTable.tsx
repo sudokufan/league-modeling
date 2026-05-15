@@ -1,5 +1,5 @@
 import type { DerivedLeague, PlayerSimResult } from "@/types";
-import { sortStandings } from "@/lib/standings";
+import { sortStandings, applyPlayoffOrdering } from "@/lib/standings";
 import { bestNScore, maxPossibleBestN } from "@/lib/scoring";
 
 interface StandingsTableProps {
@@ -38,14 +38,19 @@ export default function StandingsTable({
 
   const unofficialSet = new Set(unofficial_players ?? []);
 
-  // Sort official players, then append unofficial at the end
-  const officialSorted = sortStandings(
-    players,
-    weekly_scores,
-    overall_omw,
-    overall_stats,
-    unofficial_players,
-    best_of_n,
+  // Sort official players, then append unofficial at the end.
+  // When playoffs are complete, override top-N order with the playoff finish
+  // (champion, runner-up, 3rd, 4th).
+  const officialSorted = applyPlayoffOrdering(
+    sortStandings(
+      players,
+      weekly_scores,
+      overall_omw,
+      overall_stats,
+      unofficial_players,
+      best_of_n,
+    ),
+    league.playoffs,
   );
   const unofficialSorted = players
     .filter((p) => unofficialSet.has(p))

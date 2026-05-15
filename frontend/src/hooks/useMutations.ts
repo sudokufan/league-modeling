@@ -34,6 +34,8 @@ export function useSavePlayoffResults(leagueId?: string) {
       savePlayoffResults(payload, leagueId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['league-data', leagueId] })
+      // Status may flip to "completed" when the final match is entered, so refresh the league list too.
+      void queryClient.invalidateQueries({ queryKey: ['leagues'] })
     },
   })
 }

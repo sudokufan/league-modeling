@@ -285,6 +285,25 @@ class LeagueHandler(BaseHTTPRequestHandler):
         # Sort matches by week then round
         data["matches"].sort(key=lambda m: (m["week"], m["round"]))
 
+        # Auto-initialize playoffs once the regular season is complete.
+        # Seeds: best-7 desc, then OMW%, then GW% — matching simulate.run_simulation.
+        if not data.get("playoffs"):
+            weeks_with_data = {m["week"] for m in data["matches"]}
+            if weeks_with_data and max(weeks_with_data) >= total_weeks:
+                try:
+                    league = simulate.derive_stats(data)
+                    standings = []
+                    for p in league["players"]:
+                        b7 = simulate.best_n_score(league["weekly_scores"][p], league["best_of_n"])
+                        omw = league["overall_omw"].get(p, 0)
+                        gwp = league["overall_stats"][p]["gwp"]
+                        standings.append((p, b7, omw, gwp))
+                    standings.sort(key=lambda x: (x[1], x[2], x[3]), reverse=True)
+                    seeds = [p for p, *_ in standings[:league["playoff_spots"]]]
+                    data["playoffs"] = simulate.initialize_playoffs(seeds)
+                except Exception as e:
+                    print(f"Warning: failed to auto-initialize playoffs: {e}", file=sys.stderr)
+
         # Write back
         try:
             with open(data_file, "w") as f:
@@ -384,9 +403,29 @@ class LeagueHandler(BaseHTTPRequestHandler):
             self._send_json_error(500, f"Error writing data file: {e}")
             return
 
+        # If all playoff matches now have results, mark the league completed.
+        league_completed = False
+        if simulate.are_playoffs_complete(playoffs):
+            try:
+                config = simulate.load_leagues_config()
+                target_id = league_id or config.get("active_league")
+                for lg in config["leagues"]:
+                    if lg["id"] == target_id and lg.get("status") != "completed":
+                        lg["status"] = "completed"
+                        simulate.save_leagues_config(config)
+                        league_completed = True
+                        break
+            except Exception as e:
+                print(f"Warning: failed to auto-complete league: {e}", file=sys.stderr)
+
+        message = f"Updated playoff results: {', '.join(updated)}"
+        if league_completed:
+            message += " (league marked as completed)"
+
         self._send_json_response(200, {
             "success": True,
-            "message": f"Updated playoff results: {', '.join(updated)}"
+            "message": message,
+            "league_completed": league_completed,
         })
 
     def _handle_create_league(self):

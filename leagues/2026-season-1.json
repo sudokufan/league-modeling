@@ -1202,5 +1202,31 @@
       "games_a": 2,
       "games_b": 0
     }
-  ]
+  ],
+  "playoffs": {
+    "semifinal_1": {
+      "player_a": "Dom",
+      "player_b": "Sami",
+      "games_a": 1,
+      "games_b": 2
+    },
+    "semifinal_2": {
+      "player_a": "Alex",
+      "player_b": "Roland",
+      "games_a": 2,
+      "games_b": 0
+    },
+    "final": {
+      "player_a": "Sami",
+      "player_b": "Alex",
+      "games_a": 2,
+      "games_b": 0
+    },
+    "third_place": {
+      "player_a": "Dom",
+      "player_b": "Roland",
+      "games_a": 1,
+      "games_b": 2
+    }
+  }
 }

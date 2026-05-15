@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react'
 import type { DerivedLeague } from '@/types'
 import { useSavePlayoffResults } from '@/hooks/useMutations'
 import type { PlayoffResultsPayload } from '@/api/mutations'
+import { sortStandings } from '@/lib/standings'
 
 interface PlayoffModalProps {
   isOpen: boolean
@@ -63,10 +64,26 @@ function ScoreSelect({
 
 export default function PlayoffModal({ isOpen, onClose, league }: PlayoffModalProps) {
   const playoffs = league.playoffs
-  const sf1PlayerA = playoffs?.semifinal_1?.player_a || 'Seed 1'
-  const sf1PlayerB = playoffs?.semifinal_1?.player_b || 'Seed 4'
-  const sf2PlayerA = playoffs?.semifinal_2?.player_a || 'Seed 2'
-  const sf2PlayerB = playoffs?.semifinal_2?.player_b || 'Seed 3'
+
+  // Fall back to projected seeds from current standings when the bracket
+  // hasn't been initialized yet — so we always show real player names.
+  const projectedSeeds = useMemo(
+    () =>
+      sortStandings(
+        league.players,
+        league.weekly_scores,
+        league.overall_omw,
+        league.overall_stats,
+        league.unofficial_players ?? [],
+        league.best_of_n
+      ).slice(0, league.playoff_spots),
+    [league]
+  )
+
+  const sf1PlayerA = playoffs?.semifinal_1?.player_a || projectedSeeds[0] || 'TBD'
+  const sf1PlayerB = playoffs?.semifinal_1?.player_b || projectedSeeds[3] || 'TBD'
+  const sf2PlayerA = playoffs?.semifinal_2?.player_a || projectedSeeds[1] || 'TBD'
+  const sf2PlayerB = playoffs?.semifinal_2?.player_b || projectedSeeds[2] || 'TBD'
 
   // Initialize from existing playoff data if present
   const [sf1, setSf1] = useState<MatchScores>({

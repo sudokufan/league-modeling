@@ -1,5 +1,51 @@
-import type { DerivedLeague, PlayerStats, PlayerSimResult } from '@/types'
+import type { DerivedLeague, PlayerStats, PlayerSimResult, Playoffs, PlayoffMatch } from '@/types'
 import { bestNScore } from './scoring'
+
+/**
+ * Return (winner, loser) for a completed playoff match. A draw breaks toward
+ * player_a (higher seed) — mirrors simulate.get_match_winner_loser.
+ */
+function matchWinnerLoser(match?: PlayoffMatch | null): { winner: string | null; loser: string | null } {
+  if (!match || match.games_a == null || match.games_b == null) return { winner: null, loser: null }
+  if (!match.player_a || !match.player_b) return { winner: null, loser: null }
+  if (match.games_a >= match.games_b) return { winner: match.player_a, loser: match.player_b }
+  return { winner: match.player_b, loser: match.player_a }
+}
+
+/**
+ * True iff every playoff match (semis, final, third place) has a recorded score.
+ * Mirrors simulate.are_playoffs_complete.
+ */
+export function arePlayoffsComplete(playoffs?: Playoffs | null): boolean {
+  if (!playoffs) return false
+  for (const m of [playoffs.semifinal_1, playoffs.semifinal_2, playoffs.final, playoffs.third_place]) {
+    if (!m || m.games_a == null || m.games_b == null) return false
+  }
+  return true
+}
+
+/**
+ * Given regular-season standings, override the top 4 with the actual playoff
+ * finishing order: champion, runner-up, third, fourth. Players outside the top 4
+ * keep their regular-season order. Returns the input unchanged if playoffs are
+ * not complete or any expected player is missing.
+ */
+export function applyPlayoffOrdering(
+  regularSorted: string[],
+  playoffs?: Playoffs | null
+): string[] {
+  if (!arePlayoffsComplete(playoffs)) return regularSorted
+  const final = matchWinnerLoser(playoffs!.final)
+  const third = matchWinnerLoser(playoffs!.third_place)
+  const finishOrder = [final.winner, final.loser, third.winner, third.loser].filter(
+    (p): p is string => p != null
+  )
+  if (finishOrder.length !== 4) return regularSorted
+  // Anyone not in the top-4 finish keeps their regular-season order.
+  const top4Set = new Set(finishOrder)
+  const remainder = regularSorted.filter(p => !top4Set.has(p))
+  return [...finishOrder, ...remainder]
+}
 
 /**
  * Sort official players by standings tiebreakers:
