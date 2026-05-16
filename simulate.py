@@ -19,7 +19,7 @@ LEAGUES_DIR = os.path.join(PROJECT_DIR, "leagues")
 LEAGUES_CONFIG_FILE = os.path.join(PROJECT_DIR, "leagues_config.json")
 
 GLOBAL_DRAW_RATE = 0.05  # ~5% draw rate from historical data
-MAX_WEEKLY_POINTS = 9
+MAX_WEEKLY_POINTS = 9  # Default cap (3 rounds × 3 pts). Per-week cap is rounds_in_week × 3.
 
 
 def load_leagues_config() -> dict:
@@ -139,13 +139,18 @@ def derive_stats(data: dict) -> dict:
             "num_simulations": num_simulations, "matches": [],
             "per_week_records": {}, "per_week_opponents": {},
             "per_week_mwp": {}, "per_week_omw": {}, "overall_omw": {},
+            "rounds_in_week": {},
             "playoffs": data.get("playoffs"),
         }
 
     # Determine which weeks have data
     weeks_with_data = set()
+    rounds_in_week: dict = {}
     for m in matches:
         weeks_with_data.add(m["week"])
+        rd = m.get("round", 1)
+        if rd > rounds_in_week.get(m["week"], 0):
+            rounds_in_week[m["week"]] = rd
     weeks_completed = max(weeks_with_data) if weeks_with_data else 0
 
     # Compute weekly scores from match data
@@ -211,13 +216,15 @@ def derive_stats(data: dict) -> dict:
             player_stats[player_a]["d"] += 1
             player_stats[player_b]["d"] += 1
 
-    # Build weekly scores list for each player (None if didn't play that week)
+    # Build weekly scores list for each player (None if didn't play that week).
+    # Cap is rounds_in_week * 3 so a 4-round week allows up to 12 pts.
     weekly_scores = {}
     for p in players:
         scores = []
         for w in range(1, weeks_completed + 1):
             if p in players_in_week[w]:
-                score = min(weekly_points[w].get(p, 0), MAX_WEEKLY_POINTS)
+                week_cap = rounds_in_week.get(w, rounds_per_week) * 3
+                score = min(weekly_points[w].get(p, 0), week_cap)
                 scores.append(score)
             else:
                 scores.append(None)
@@ -351,6 +358,7 @@ def derive_stats(data: dict) -> dict:
         "per_week_mwp": per_week_mwp,
         "per_week_omw": per_week_omw,
         "overall_omw": overall_omw,
+        "rounds_in_week": rounds_in_week,
         "playoffs": playoffs,
     }
 
@@ -402,10 +410,10 @@ def total_match_points(weekly_scores_list: list) -> int:
     return sum(s for s in weekly_scores_list if s is not None)
 
 
-def max_possible_best7(existing_scores: list, weeks_completed: int, total_weeks: int, best_of_n: int) -> int:
+def max_possible_best7(existing_scores: list, weeks_completed: int, total_weeks: int, best_of_n: int, rounds_per_week: int = 3) -> int:
     existing = [s for s in existing_scores if s is not None]
     remaining_weeks = total_weeks - weeks_completed
-    all_scores = existing + [MAX_WEEKLY_POINTS] * remaining_weeks
+    all_scores = existing + [rounds_per_week * 3] * remaining_weeks
     all_scores.sort(reverse=True)
     return sum(all_scores[:best_of_n])
 
@@ -479,8 +487,9 @@ def simulate_week(active_players: list, strengths: dict, rounds_per_week: int) -
                 records[pa]["d"] += 1
                 records[pb]["d"] += 1
 
+    weekly_cap = rounds_per_week * 3
     for p in points:
-        points[p] = min(points[p], MAX_WEEKLY_POINTS)
+        points[p] = min(points[p], weekly_cap)
 
     return points, records, opponents
 
@@ -604,7 +613,7 @@ def run_simulation(league: dict) -> dict:
             "playoff_count": playoff_counts[p],
             "positions": dict(position_counts[p]),
             "current_best7": best_n_score(weekly_scores[p], best_of_n),
-            "max_possible_best7": max_possible_best7(weekly_scores[p], weeks_completed, total_weeks, best_of_n),
+            "max_possible_best7": max_possible_best7(weekly_scores[p], weeks_completed, total_weeks, best_of_n, rounds_per_week),
             "min_guaranteed_best7": min_guaranteed_best7(weekly_scores[p], best_of_n),
             "total_match_pts": total_match_points(weekly_scores[p]),
             "weeks_played": sum(1 for s in weekly_scores[p] if s is not None),

@@ -93,7 +93,7 @@ export function computeAllTimeStats(
   const leagueChampions: LeagueChampion[] = []
 
   // Collect per-league week sequences for streak computation
-  const leagueWeekSequences: { officialPlayers: Set<string>; weeklyScores: Record<string, (number | null)[]>; weeks: number }[] = []
+  const leagueWeekSequences: { officialPlayers: Set<string>; weeklyScores: Record<string, (number | null)[]>; weeks: number; weekCaps: number[] }[] = []
 
   for (const lgInfo of sortedInfos) {
     const league = leagues.find(l => l._league_info?.id === lgInfo.id)
@@ -107,10 +107,16 @@ export function computeAllTimeStats(
     const isCompleted = lgInfo.status === 'completed'
     const totalWeeksInLeague = Object.values(ws)[0]?.length ?? 0
 
+    const roundsInWeekForSeq = league.rounds_in_week ?? {}
+    const defaultRoundsForSeq = league.rounds_per_week
+    const weekCaps = Array.from({ length: totalWeeksInLeague }, (_, i) =>
+      (roundsInWeekForSeq[String(i + 1)] ?? defaultRoundsForSeq) * 3
+    )
     leagueWeekSequences.push({
       officialPlayers: new Set(players.filter(p => !unofficial.has(p))),
       weeklyScores: ws,
       weeks: totalWeeksInLeague,
+      weekCaps,
     })
 
     // Compute standings for this league
@@ -160,6 +166,13 @@ export function computeAllTimeStats(
       }
     }
 
+    // Per-week cap helper: rounds_in_week × 3, falling back to the league's
+    // configured rounds_per_week for weeks without entered matches.
+    const roundsInWeek = league.rounds_in_week ?? {}
+    const defaultRounds = league.rounds_per_week
+    const weekCap = (weekIdx: number): number =>
+      (roundsInWeek[String(weekIdx + 1)] ?? defaultRounds) * 3
+
     // Accumulate player stats
     for (const p of players) {
       if (unofficial.has(p)) continue
@@ -168,7 +181,10 @@ export function computeAllTimeStats(
       const scores = ws[p] ?? []
       const playedScores = scores.filter((s): s is number => s !== null)
       pc.weeksPlayed += playedScores.length
-      pc.nines += playedScores.filter(s => s === 9).length
+      pc.nines += scores.reduce<number>(
+        (n, s, i) => n + (s != null && s === weekCap(i) ? 1 : 0),
+        0
+      )
       pc.weeklyScoresAll.push(...playedScores)
       if (playedScores.length > 0) {
         pc.highestWeekly = Math.max(pc.highestWeekly, Math.max(...playedScores))
@@ -345,20 +361,20 @@ export function computeAllTimeStats(
       }
       while (scores.length < seq.weeks) scores.push(null)
 
-      for (const s of scores) {
+      scores.forEach((s, i) => {
         if (s !== null) {
           attendStreak++
           pc.maxAttendanceStreak = Math.max(pc.maxAttendanceStreak, attendStreak)
         } else {
           attendStreak = 0
         }
-        if (s === 9) {
+        if (s != null && s === seq.weekCaps[i]) {
           undefStreak++
           pc.maxUndefeatedStreak = Math.max(pc.maxUndefeatedStreak, undefStreak)
         } else if (s !== null) {
           undefStreak = 0
         }
-      }
+      })
     }
   }
 

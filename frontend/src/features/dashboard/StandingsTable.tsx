@@ -10,9 +10,9 @@ interface StandingsTableProps {
   selectedWeek?: number | null;
 }
 
-function scoreClass(value: number): string {
-  if (value === 9) return "text-[#2ecc71] font-bold";
-  if (value >= 6) return "text-[#a8d8a8]";
+function scoreClass(value: number, weekCap: number): string {
+  if (value === weekCap) return "text-[#2ecc71] font-bold";
+  if (value >= weekCap - 3) return "text-[#a8d8a8]";
   if (value >= 3) return "text-[#ccc]";
   return "text-[#e74c3c]";
 }
@@ -34,7 +34,16 @@ export default function StandingsTable({
     best_of_n,
     playoff_spots,
     matches,
+    rounds_per_week,
+    rounds_in_week,
   } = league;
+
+  // Per-week cap. Falls back to the league's configured rounds_per_week when
+  // a week has no entered matches (e.g., future weeks or legacy data).
+  const weekCap = (weekNum: number): number => {
+    const r = rounds_in_week?.[String(weekNum)] ?? rounds_per_week;
+    return r * 3;
+  };
 
   const unofficialSet = new Set(unofficial_players ?? []);
 
@@ -68,7 +77,7 @@ export default function StandingsTable({
   for (const p of officialPlayers) {
     const s = weekly_scores[p] ?? [];
     playerBest[p] = bestNScore(s, best_of_n);
-    playerMax[p] = maxPossibleBestN(s, weeks_completed, total_weeks, best_of_n);
+    playerMax[p] = maxPossibleBestN(s, weeks_completed, total_weeks, best_of_n, rounds_per_week);
   }
 
   // A player has clinched playoffs if fewer than playoff_spots other official
@@ -136,7 +145,7 @@ export default function StandingsTable({
               {!seasonComplete && (
                 <th
                   className="bg-[#0f3460] text-[#e0e0e0] text-[0.82em] uppercase tracking-wider px-2 py-2.5 text-center font-semibold"
-                  title={`Best possible Best-${best_of_n} (scoring 9 every remaining week)`}
+                  title={`Best possible Best-${best_of_n} (scoring ${rounds_per_week * 3} every remaining week)`}
                 >
                   Max
                 </th>
@@ -166,7 +175,7 @@ export default function StandingsTable({
               const isTop = !isUnofficial && rank <= playoff_spots;
               const scores = weekly_scores[player] ?? [];
               const best = bestNScore(scores, best_of_n);
-              const maxPossible = maxPossibleBestN(scores, weeks_completed, total_weeks, best_of_n);
+              const maxPossible = maxPossibleBestN(scores, weeks_completed, total_weeks, best_of_n, rounds_per_week);
               const isChamp = player === defendingChampion;
               const clinched = isTop && hasClinched(player);
 
@@ -202,7 +211,7 @@ export default function StandingsTable({
                       return (
                         <td
                           key={i}
-                          className={`px-2 py-2 text-center border-b border-[#1a1a2e] ${scoreClass(score)}`}
+                          className={`px-2 py-2 text-center border-b border-[#1a1a2e] ${scoreClass(score, weekCap(i + 1))}`}
                         >
                           {score}
                         </td>

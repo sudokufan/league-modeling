@@ -1,6 +1,21 @@
 // Pure scoring utility functions, ported from simulate.py
 
+// Default cap: 3 rounds × 3 pts. Per-week cap is rounds_in_week × 3.
 export const MAX_WEEKLY_POINTS = 9
+
+/** Max possible score for a week with `rounds` rounds (= rounds * 3). */
+export function weekCap(rounds: number): number {
+  return rounds * 3
+}
+
+/**
+ * Was this week a "perfect" week — i.e. score equals the week's cap.
+ * Returns false if the round count is unknown (defensive default).
+ */
+export function isPerfectWeek(score: number | null, roundsInThatWeek: number | undefined): boolean {
+  if (score == null || !roundsInThatWeek) return false
+  return score === roundsInThatWeek * 3
+}
 
 /**
  * Sum of the best N non-null weekly scores.
@@ -20,17 +35,21 @@ export function totalMatchPoints(scores: (number | null)[]): number {
 }
 
 /**
- * Maximum possible best-N score, filling remaining weeks with MAX_WEEKLY_POINTS.
+ * Maximum possible best-N score. Remaining weeks are projected at the league's
+ * default cap (`roundsPerWeek` × 3 pts), since future weeks default to the
+ * configured round count.
  */
 export function maxPossibleBestN(
   scores: (number | null)[],
   weeksCompleted: number,
   totalWeeks: number,
-  n: number
+  n: number,
+  roundsPerWeek: number = 3
 ): number {
   const existing = scores.filter((s): s is number => s !== null)
   const remainingWeeks = totalWeeks - weeksCompleted
-  const allScores = [...existing, ...Array(remainingWeeks).fill(MAX_WEEKLY_POINTS)]
+  const remainingCap = roundsPerWeek * 3
+  const allScores = [...existing, ...Array(remainingWeeks).fill(remainingCap)]
   allScores.sort((a, b) => b - a)
   return allScores.slice(0, n).reduce((sum, s) => sum + s, 0)
 }

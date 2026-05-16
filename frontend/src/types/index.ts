@@ -87,6 +87,7 @@ export interface DerivedLeague {
   per_week_mwp: Record<string, Record<string, number>>         // week(str) -> player -> mwp
   per_week_omw: Record<string, Record<string, number>>         // week(str) -> player -> omw
   overall_omw: Record<string, number>
+  rounds_in_week: Record<string, number>                        // week(str) -> rounds played in that week
   playoffs?: Playoffs | null
   _league_info: LeagueInfo
   _all_leagues: LeagueInfo[]

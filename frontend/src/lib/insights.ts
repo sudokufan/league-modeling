@@ -1,8 +1,6 @@
 import type { DerivedLeague, InsightCard, Match } from '@/types'
 import { bestNScore } from './scoring'
 
-const MAX_WEEKLY_POINTS = 9
-
 /**
  * Generate insight cards from a DerivedLeague.
  * Ported from generate_insights() in simulate.py.
@@ -19,7 +17,18 @@ export function generateInsights(league: DerivedLeague): InsightCard[] {
     weeks_completed,
     best_of_n,
     matches,
+    rounds_per_week,
+    rounds_in_week,
   } = league
+
+  // A perfect week = score equals the round count for that week × 3.
+  const isPerfectAt = (weekIdx: number, score: number | null): boolean => {
+    if (score == null) return false
+    const r = rounds_in_week?.[String(weekIdx + 1)] ?? rounds_per_week
+    return score === r * 3
+  }
+  const countPerfect = (scores: (number | null)[]): number =>
+    scores.reduce((n, s, i) => n + (isPerfectAt(i, s) ? 1 : 0), 0)
 
   if (!weekly_scores || !overall_stats) return insights
 
@@ -68,21 +77,21 @@ export function generateInsights(league: DerivedLeague): InsightCard[] {
     })
   }
 
-  // 2. Most 9-point nights
-  const nineCounts: Record<string, number> = {}
+  // 2. Most perfect nights (score == rounds_in_week * 3)
+  const perfectCounts: Record<string, number> = {}
   for (const p of officialPlayers) {
-    const nines = (weekly_scores[p] ?? []).filter(s => s === MAX_WEEKLY_POINTS).length
-    if (nines > 0) nineCounts[p] = nines
+    const n = countPerfect(weekly_scores[p] ?? [])
+    if (n > 0) perfectCounts[p] = n
   }
-  if (Object.keys(nineCounts).length > 0) {
-    const sorted = Object.entries(nineCounts).sort((a, b) => b[1] - a[1])
+  if (Object.keys(perfectCounts).length > 0) {
+    const sorted = Object.entries(perfectCounts).sort((a, b) => b[1] - a[1])
     // Only show if sole leader
     if (sorted.length === 1 || sorted[0][1] !== sorted[1][1]) {
       insights.push({
         title: 'Most Perfect Nights',
         player: sorted[0][0],
         value: String(sorted[0][1]),
-        detail: 'Undefeated 9-point weeks',
+        detail: 'Undefeated weeks',
       })
     }
   }
@@ -152,30 +161,24 @@ export function generateInsights(league: DerivedLeague): InsightCard[] {
     }
   }
 
-  // 5. Undefeated Club / Highest single week score
-  const bestWeekScore = Math.max(
-    0,
-    ...officialPlayers.flatMap(p => (weekly_scores[p] ?? []).filter((s): s is number => s !== null))
+  // 5. Undefeated Club — players who hit a perfect week (varies by round count)
+  const perfectPlayers = officialPlayers.filter(p =>
+    (weekly_scores[p] ?? []).some((s, i) => isPerfectAt(i, s))
   )
-  if (bestWeekScore === MAX_WEEKLY_POINTS) {
-    const ninePlayers = officialPlayers.filter(p =>
-      (weekly_scores[p] ?? []).some(s => s === MAX_WEEKLY_POINTS)
-    )
-    if (ninePlayers.length <= 3) {
-      insights.push({
-        title: 'Undefeated Club',
-        player: ninePlayers.join(', '),
-        value: '9 pts',
-        detail: 'Achieved a perfect night',
-      })
-    }
+  if (perfectPlayers.length > 0 && perfectPlayers.length <= 3) {
+    insights.push({
+      title: 'Undefeated Club',
+      player: perfectPlayers.join(', '),
+      value: 'Perfect',
+      detail: 'Achieved a perfect night',
+    })
   }
 
-  // 6. Almost There (2-0 then lost round 3, never had a 9-point night)
+  // 6. Almost There (won every round but the last; never had a perfect week)
   if (matches && matches.length > 0) {
-    const weeklyNinesSet = new Set(
+    const weeklyPerfectSet = new Set(
       officialPlayers.filter(p =>
-        (weekly_scores[p] ?? []).some(s => s === MAX_WEEKLY_POINTS)
+        (weekly_scores[p] ?? []).some((s, i) => isPerfectAt(i, s))
       )
     )
 
@@ -223,13 +226,19 @@ export function generateInsights(league: DerivedLeague): InsightCard[] {
 
     const almostThereCounts: Record<string, number> = {}
     for (const p of officialPlayers) {
-      if (weeklyNinesSet.has(p)) continue
+      if (weeklyPerfectSet.has(p)) continue
       let count = 0
       const weekMap = roundResults[p] ?? {}
-      for (const weekData of Object.values(weekMap)) {
-        if (weekData[1] === 'W' && weekData[2] === 'W' && weekData[3] === 'L') {
-          count++
+      for (const [weekStr, weekData] of Object.entries(weekMap)) {
+        const week = Number(weekStr)
+        const rounds = rounds_in_week?.[String(week)] ?? rounds_per_week
+        if (rounds < 2) continue
+        // Won every round but the last one
+        let allWonButLast = true
+        for (let r = 1; r < rounds; r++) {
+          if (weekData[r] !== 'W') { allWonButLast = false; break }
         }
+        if (allWonButLast && weekData[rounds] === 'L') count++
       }
       if (count > 0) almostThereCounts[p] = count
     }
@@ -244,7 +253,7 @@ export function generateInsights(league: DerivedLeague): InsightCard[] {
           title: 'Almost There',
           player: leaders[0],
           value: String(topCount),
-          detail: 'Started 2-0, then lost Round 3',
+          detail: 'Won every round but the last',
         })
       }
     }

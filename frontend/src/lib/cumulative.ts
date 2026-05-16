@@ -1,8 +1,6 @@
 import type { DerivedLeague } from '@/types'
 import { bestNScore, totalMatchPoints } from './scoring'
 
-const MAX_WEEKLY_POINTS = 9
-
 export interface CumulativeLeagueDetail {
   leagueId: string
   displayName: string
@@ -50,12 +48,19 @@ export function computeCumulativeStandings(leagues: DerivedLeague[]): Cumulative
     const displayName = leagueInfo.display_name ?? leagueInfo.name
     const bestOfN = league.best_of_n
 
+    const roundsInWeek = league.rounds_in_week ?? {}
+    const defaultRounds = league.rounds_per_week
     for (const p of league.players) {
       const scores = league.weekly_scores[p] ?? []
       const bestN = bestNScore(scores, bestOfN)
       const weeksPlayed = scores.filter(s => s !== null).length
       const totalPts = totalMatchPoints(scores)
-      const nines = scores.filter(s => s === MAX_WEEKLY_POINTS).length
+      // "nines" = perfect weeks (score equals that week's cap = rounds × 3)
+      const nines = scores.reduce<number>((n, s, i) => {
+        if (s == null) return n
+        const r = roundsInWeek[String(i + 1)] ?? defaultRounds
+        return n + (s === r * 3 ? 1 : 0)
+      }, 0)
 
       if (!playerTotals[p]) {
         playerTotals[p] = {
