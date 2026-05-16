@@ -28,7 +28,7 @@ export function generateInsights(league: DerivedLeague): InsightCard[] {
     return score === r * 3
   }
   const countPerfect = (scores: (number | null)[]): number =>
-    scores.reduce((n, s, i) => n + (isPerfectAt(i, s) ? 1 : 0), 0)
+    scores.reduce<number>((n, s, i) => n + (isPerfectAt(i, s) ? 1 : 0), 0)
 
   if (!weekly_scores || !overall_stats) return insights
 

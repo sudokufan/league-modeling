@@ -142,7 +142,7 @@ export function getDefendingChampion(prevLeagueData: DerivedLeague): string | nu
 
   if (prevPlayers.length === 0) return null
 
-  const sorted = sortStandings(
+  const regularSorted = sortStandings(
     prevPlayers,
     prevLeagueData.weekly_scores,
     prevLeagueData.overall_omw,
@@ -150,6 +150,10 @@ export function getDefendingChampion(prevLeagueData: DerivedLeague): string | nu
     [], // already filtered out unofficial above
     prevLeagueData.best_of_n
   )
+
+  // If the previous league's playoffs were played out, the actual champion
+  // is the final's winner — not the regular-season #1.
+  const sorted = applyPlayoffOrdering(regularSorted, prevLeagueData.playoffs)
 
   return sorted[0] ?? null
 }

@@ -1,5 +1,5 @@
 {
-  "active_league": "2026-season-1",
+  "active_league": "2026-season-2",
   "leagues": [
     {
       "id": "2025-season-1",
@@ -16,6 +16,14 @@
       "file": "2026-season-1.json",
       "status": "completed",
       "created": "2026-01-01"
+    },
+    {
+      "id": "2026-season-2",
+      "name": "2026 Season 2",
+      "file": "2026-season-2.json",
+      "status": "active",
+      "created": "2026-05-16",
+      "display_name": "Strixhaven League"
     }
   ]
 }
