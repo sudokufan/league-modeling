@@ -187,8 +187,33 @@ export function computeAllTimeStats(
       }
     }
 
-    // Process matches for match-level stats
-    const leagueMatches = league.matches ?? []
+    // Process matches for match-level stats. Include completed playoff matches
+    // so H2H, match wins, sweeps, etc. reflect post-season play too.
+    const leagueMatches: { week: number; round: number; player_a: string; player_b?: string | null; games_a: number; games_b: number }[] = [
+      ...(league.matches ?? []),
+    ]
+    const playoffs = league.playoffs
+    if (playoffs) {
+      const playoffOrder: { key: 'semifinal_1' | 'semifinal_2' | 'final' | 'third_place'; round: number }[] = [
+        { key: 'semifinal_1', round: 1 },
+        { key: 'semifinal_2', round: 1 },
+        { key: 'final', round: 2 },
+        { key: 'third_place', round: 2 },
+      ]
+      for (const { key, round } of playoffOrder) {
+        const m = playoffs[key]
+        if (!m || !m.player_a || !m.player_b) continue
+        if (m.games_a == null || m.games_b == null) continue
+        leagueMatches.push({
+          week: totalWeeksInLeague + 1,
+          round,
+          player_a: m.player_a,
+          player_b: m.player_b,
+          games_a: m.games_a,
+          games_b: m.games_b,
+        })
+      }
+    }
     // Track match results for win streak computation within this league
     const weekMatchResults = new Map<string, { week: number; round: number; result: 'W' | 'L' | 'D' }[]>()
 

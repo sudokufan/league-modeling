@@ -66,13 +66,36 @@ export function computeH2HStats(
     const league = leagues.find(l => l._league_info?.id === lgInfo.id)
     if (!league) continue
     const matches = league.matches ?? []
-    if (matches.length === 0) continue
+
+    // Pull in completed playoff matches so H2H reflects post-season results too.
+    const playoffMatches: { player_a: string; player_b: string; games_a: number; games_b: number }[] = []
+    const playoffs = league.playoffs
+    if (playoffs) {
+      for (const key of ['semifinal_1', 'semifinal_2', 'final', 'third_place'] as const) {
+        const m = playoffs[key]
+        if (!m || !m.player_a || !m.player_b) continue
+        if (m.games_a == null || m.games_b == null) continue
+        playoffMatches.push({
+          player_a: m.player_a,
+          player_b: m.player_b,
+          games_a: m.games_a,
+          games_b: m.games_b,
+        })
+      }
+    }
+
+    if (matches.length === 0 && playoffMatches.length === 0) continue
 
     const displayName = lgInfo.display_name ?? lgInfo.name
     const h2hLeague: Record<string, Record<string, H2HRecord>> = {}
     const leaguePlayers = new Set<string>()
 
-    for (const m of matches) {
+    const allMatches: { player_a: string; player_b?: string | null; games_a: number; games_b: number }[] = [
+      ...matches,
+      ...playoffMatches,
+    ]
+
+    for (const m of allMatches) {
       const pa = m.player_a
       const pb = m.player_b
       if (!pb || pb === '' || pb === '-') continue

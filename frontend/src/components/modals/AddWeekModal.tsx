@@ -123,6 +123,14 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
     })
   }, [])
 
+  const addRound = useCallback(() => {
+    setRounds(prev => [...prev, [emptyMatchup()]])
+  }, [])
+
+  const removeRound = useCallback((roundIdx: number) => {
+    setRounds(prev => prev.filter((_, i) => i !== roundIdx))
+  }, [])
+
   const handleSubmit = useCallback(async () => {
     setError(null)
 
@@ -189,7 +197,18 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
 
         {rounds.map((round, roundIdx) => (
           <div key={roundIdx} className="mb-6">
-            <h3 className="text-[#e0e0e0] font-semibold mb-3">Round {roundIdx + 1}</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[#e0e0e0] font-semibold">Round {roundIdx + 1}</h3>
+              {roundIdx >= league.rounds_per_week && (
+                <button
+                  onClick={() => removeRound(roundIdx)}
+                  className="text-[#888] hover:text-[#e94560] text-sm"
+                  title="Remove this round"
+                >
+                  Remove round
+                </button>
+              )}
+            </div>
             {round.map((matchup, matchIdx) => {
               const keyA = `${roundIdx}-${matchIdx}-playerA`
               const keyB = `${roundIdx}-${matchIdx}-playerB`
@@ -341,6 +360,12 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
             </button>
           </div>
         ))}
+
+        <div className="mb-6">
+          <button onClick={addRound} className={`${btnSecondary} text-sm`}>
+            + Add Round
+          </button>
+        </div>
 
         {error && (
           <div className="text-[#e94560] text-sm mb-4 p-3 bg-[#e94560]/10 rounded-lg border border-[#e94560]/30">
