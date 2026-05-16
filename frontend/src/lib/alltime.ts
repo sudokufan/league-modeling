@@ -1,5 +1,6 @@
 import type { DerivedLeague, LeagueInfo } from '@/types'
 import { bestNScore } from './scoring'
+import { applyPlayoffOrdering } from './standings'
 
 export interface LeagueChampion {
   league: string
@@ -124,7 +125,7 @@ export function computeAllTimeStats(
     const overallOmw = league.overall_omw ?? {}
     const overallStats = league.overall_stats ?? {}
 
-    const standings = [...officialPlayers].sort((a, b) => {
+    const regularSorted = [...officialPlayers].sort((a, b) => {
       const aB = bestNScore(ws[a] ?? [], bestOfN)
       const bB = bestNScore(ws[b] ?? [], bestOfN)
       if (bB !== aB) return bB - aB
@@ -136,6 +137,11 @@ export function computeAllTimeStats(
       if (bO !== aO) return bO - aO
       return (overallStats[b]?.gwp ?? 0) - (overallStats[a]?.gwp ?? 0)
     })
+
+    // Override the top-N with the actual playoff finishing order so
+    // best-finish / titles / top-4 reflect playoff results, not just regular
+    // season standings.
+    const standings = applyPlayoffOrdering(regularSorted, league.playoffs)
 
     // Check for champion via playoffs
     const playoffs = league.playoffs

@@ -1,7 +1,7 @@
 {
   "config": {
     "total_weeks": 10,
-    "rounds_per_week": 3,
+    "rounds_per_week": 4,
     "best_of_n": 7,
     "playoff_spots": 4,
     "num_simulations": 50000
@@ -47,7 +47,7 @@
       "week": 1,
       "round": 1,
       "player_a": "Georgia",
-      "player_b": "Bryan",
+      "player_b": "Alex",
       "games_a": 1,
       "games_b": 2
     },
