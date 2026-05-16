@@ -192,7 +192,6 @@ export function computeAllTimeStats(
     const leagueMatches: { week: number; round: number; player_a: string; player_b?: string | null; games_a: number; games_b: number }[] = [
       ...(league.matches ?? []),
     ]
-    const playoffs = league.playoffs
     if (playoffs) {
       const playoffOrder: { key: 'semifinal_1' | 'semifinal_2' | 'final' | 'third_place'; round: number }[] = [
         { key: 'semifinal_1', round: 1 },
