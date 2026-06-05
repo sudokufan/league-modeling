@@ -12,6 +12,8 @@ interface LocalRecord {
   l: number
   d: number
   pts: number
+  gw: number
+  gl: number
 }
 
 export default function WeekDetailPanel({
@@ -38,7 +40,7 @@ export default function WeekDetailPanel({
   const records: Record<string, LocalRecord> = {}
 
   const getRecord = (p: string): LocalRecord => {
-    if (!records[p]) records[p] = { w: 0, l: 0, d: 0, pts: 0 }
+    if (!records[p]) records[p] = { w: 0, l: 0, d: 0, pts: 0, gw: 0, gl: 0 }
     return records[p]
   }
 
@@ -57,8 +59,14 @@ export default function WeekDetailPanel({
         getRecord(pa).w += 1
         getRecord(pa).pts += 3
       }
+      getRecord(pa).gw += ga
+      getRecord(pa).gl += gb
     } else {
       weekPlayers.add(pb)
+      getRecord(pa).gw += ga
+      getRecord(pa).gl += gb
+      getRecord(pb).gw += gb
+      getRecord(pb).gl += ga
       if (ga > gb) {
         getRecord(pa).w += 1
         getRecord(pa).pts += 3
@@ -82,7 +90,16 @@ export default function WeekDetailPanel({
     const aPts = getRecord(a).pts
     const bPts = getRecord(b).pts
     if (bPts !== aPts) return bPts - aPts
-    return (weekOmw[b] ?? 0) - (weekOmw[a] ?? 0)
+
+    const aOmw = weekOmw[a] ?? 0
+    const bOmw = weekOmw[b] ?? 0
+    if (bOmw !== aOmw) return bOmw - aOmw
+
+    const aRec = getRecord(a)
+    const bRec = getRecord(b)
+    const aGwp = aRec.gw + aRec.gl > 0 ? aRec.gw / (aRec.gw + aRec.gl) : 0.5
+    const bGwp = bRec.gw + bRec.gl > 0 ? bRec.gw / (bRec.gw + bRec.gl) : 0.5
+    return bGwp - aGwp
   })
 
   // Sort matches within a round: byes last, then by player order
