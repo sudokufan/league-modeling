@@ -35,6 +35,7 @@ const btnSecondary =
 
 export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalProps) {
   const [weekNumber, setWeekNumber] = useState(league.weeks_completed + 1)
+  const [matchupsPerRound, setMatchupsPerRound] = useState(1)
   const [rounds, setRounds] = useState<RoundData[]>(() =>
     Array.from({ length: league.rounds_per_week }, () => [emptyMatchup()])
   )
@@ -123,9 +124,32 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
     })
   }, [])
 
-  const addRound = useCallback(() => {
-    setRounds(prev => [...prev, [emptyMatchup()]])
+  // Resize every round to have exactly `count` matchups. Existing matchups are
+  // preserved; rounds that are short get empty matchups appended, longer rounds
+  // are trimmed from the end.
+  const applyMatchupsPerRound = useCallback((count: number) => {
+    const n = Math.max(1, count)
+    setMatchupsPerRound(n)
+    setRounds(prev =>
+      prev.map(round => {
+        if (round.length === n) return round.map(m => ({ ...m }))
+        if (round.length < n) {
+          return [
+            ...round.map(m => ({ ...m })),
+            ...Array.from({ length: n - round.length }, emptyMatchup),
+          ]
+        }
+        return round.slice(0, n).map(m => ({ ...m }))
+      })
+    )
   }, [])
+
+  const addRound = useCallback(() => {
+    setRounds(prev => [
+      ...prev,
+      Array.from({ length: matchupsPerRound }, emptyMatchup),
+    ])
+  }, [matchupsPerRound])
 
   const removeRound = useCallback((roundIdx: number) => {
     setRounds(prev => prev.filter((_, i) => i !== roundIdx))
@@ -183,16 +207,29 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
           </button>
         </div>
 
-        <div className="mb-4">
-          <label className={labelClass}>Week Number</label>
-          <input
-            type="number"
-            min={1}
-            max={league.total_weeks}
-            value={weekNumber}
-            onChange={e => setWeekNumber(Number(e.target.value))}
-            className={`${inputClass} !w-24`}
-          />
+        <div className="mb-4 flex flex-wrap items-end gap-4">
+          <div>
+            <label className={labelClass}>Week Number</label>
+            <input
+              type="number"
+              min={1}
+              max={league.total_weeks}
+              value={weekNumber}
+              onChange={e => setWeekNumber(Number(e.target.value))}
+              className={`${inputClass} !w-24`}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Matchups / round</label>
+            <input
+              type="number"
+              min={1}
+              value={matchupsPerRound}
+              onChange={e => applyMatchupsPerRound(Number(e.target.value))}
+              className={`${inputClass} !w-24`}
+              title="Set how many matchup rows each round starts with"
+            />
+          </div>
         </div>
 
         {rounds.map((round, roundIdx) => (
