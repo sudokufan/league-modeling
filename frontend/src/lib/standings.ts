@@ -133,6 +133,51 @@ export function weeklyTopN(
 }
 
 /**
+ * Rank all official players by their standings *as of the end of week `throughWeek`*.
+ * Uses the same dominant key as the live standings — best-N over scores up to and
+ * including `throughWeek` — with average OMW through that week as the tiebreaker
+ * (mirrors weeklyTopN, since season-total OMW/GWP aren't meaningful mid-season).
+ *
+ * Returns a map of player -> 1-based rank. Unofficial players are excluded.
+ * Returns an empty map for throughWeek < 1.
+ */
+export function rankAllThroughWeek(
+  players: string[],
+  weeklyScores: Record<string, (number | null)[]>,
+  perWeekOmw: Record<string, Record<string, number>>,
+  unofficialPlayers: string[],
+  bestOfN: number,
+  throughWeek: number
+): Record<string, number> {
+  const ranks: Record<string, number> = {}
+  if (throughWeek < 1) return ranks
+
+  const unofficialSet = new Set(unofficialPlayers)
+  const official = players.filter(p => !unofficialSet.has(p))
+
+  const omwThrough = (p: string): number => {
+    const omws: number[] = []
+    for (let wk = 1; wk <= throughWeek; wk++) {
+      const weekData = perWeekOmw[String(wk)]
+      if (weekData && p in weekData) omws.push(weekData[p])
+    }
+    return omws.length > 0 ? omws.reduce((a, b) => a + b, 0) / omws.length : 0
+  }
+
+  const sorted = [...official].sort((a, b) => {
+    const aBestN = bestNScore((weeklyScores[a] ?? []).slice(0, throughWeek), bestOfN)
+    const bBestN = bestNScore((weeklyScores[b] ?? []).slice(0, throughWeek), bestOfN)
+    if (bBestN !== aBestN) return bBestN - aBestN
+    return omwThrough(b) - omwThrough(a)
+  })
+
+  sorted.forEach((p, i) => {
+    ranks[p] = i + 1
+  })
+  return ranks
+}
+
+/**
  * Given the already-loaded previous league's DerivedLeague, return the winner's name
  * by sorting official players with the same standings tiebreaker logic.
  */

@@ -1,5 +1,5 @@
 import type { DerivedLeague, PlayerSimResult } from "@/types";
-import { sortStandings, applyPlayoffOrdering } from "@/lib/standings";
+import { sortStandings, applyPlayoffOrdering, rankAllThroughWeek } from "@/lib/standings";
 import { bestNScore, maxPossibleBestN } from "@/lib/scoring";
 
 interface StandingsTableProps {
@@ -36,6 +36,7 @@ export default function StandingsTable({
     matches,
     rounds_per_week,
     rounds_in_week,
+    per_week_omw,
   } = league;
 
   // Per-week cap. Falls back to the league's configured rounds_per_week when
@@ -93,6 +94,20 @@ export default function StandingsTable({
     ).length;
     return couldOvertake < playoff_spots;
   }
+
+  // Movement vs the previous week. Only meaningful mid-season (>= 2 weeks played)
+  // and while ranking by regular-season standings (not the playoff-finish order).
+  const showMovement = !seasonComplete && weeks_completed >= 2;
+  const prevWeekRanks = showMovement
+    ? rankAllThroughWeek(
+        players,
+        weekly_scores,
+        per_week_omw,
+        unofficial_players,
+        best_of_n,
+        weeks_completed - 1,
+      )
+    : {};
 
   // Which weeks have match data (clickable)
   const enteredWeeks = new Set(matches.map((m) => m.week));
@@ -192,8 +207,44 @@ export default function StandingsTable({
                           : ""
                   }`}
                 >
-                  <td className="px-2 py-2 text-center border-b border-[#1a1a2e] font-bold text-[#888] w-10">
-                    {rank}
+                  <td className="px-2 py-2 text-center border-b border-[#1a1a2e] font-bold text-[#888] w-14">
+                    <span className="inline-flex items-center justify-center gap-1">
+                      {rank}
+                      {showMovement && !isUnofficial && (() => {
+                        const prev = prevWeekRanks[player];
+                        if (prev == null) {
+                          return (
+                            <span
+                              className="text-[#3498db] text-[0.78em] font-semibold"
+                              title="New entry this week"
+                            >
+                              NEW
+                            </span>
+                          );
+                        }
+                        const delta = prev - rank; // positive = moved up
+                        if (delta === 0) {
+                          return (
+                            <span
+                              className="text-[#666] text-[0.8em]"
+                              title="No change since last week"
+                            >
+                              &ndash;
+                            </span>
+                          );
+                        }
+                        const up = delta > 0;
+                        return (
+                          <span
+                            className={`text-[0.78em] font-semibold ${up ? "text-[#2ecc71]" : "text-[#e74c3c]"}`}
+                            title={`${up ? "Up" : "Down"} ${Math.abs(delta)} since last week (was #${prev})`}
+                          >
+                            {up ? "▲" : "▼"}
+                            {Math.abs(delta)}
+                          </span>
+                        );
+                      })()}
+                    </span>
                   </td>
                   <td
                     className={`px-2 py-2 text-left border-b border-[#1a1a2e] font-semibold whitespace-nowrap ${
