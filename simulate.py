@@ -694,13 +694,27 @@ def are_playoffs_complete(playoffs: dict) -> bool:
 # API Entry Points
 # ============================================================
 
-def run_simulation_api(league_id: str = None) -> dict:
-    """Run Monte Carlo simulation and return results as JSON-serializable dict."""
+def run_simulation_api(league_id: str = None, exclude: list = None) -> dict:
+    """Run Monte Carlo simulation and return results as JSON-serializable dict.
+
+    exclude: players to leave out of the projection entirely (e.g. someone who
+    has told you they can't make the rest of the season). They forfeit their
+    remaining weeks and their playoff spot goes to the next player up.
+    """
     data = load_league_data(league_id=league_id)
     league = derive_stats(data)
 
     if league["weeks_completed"] >= league["total_weeks"]:
         return {"error": "League is complete, no simulation needed"}
+
+    excluded = []
+    if exclude:
+        exclude_set = set(exclude)
+        excluded = [p for p in league["players"] if p in exclude_set]
+        remaining = [p for p in league["players"] if p not in exclude_set]
+        if len(remaining) < 2:
+            return {"error": "Too many players excluded to run a simulation"}
+        league = dict(league, players=remaining)
 
     results = run_simulation(league)
     status = check_elimination_clinch(results, league["players"], league["playoff_spots"])
@@ -727,7 +741,11 @@ def run_simulation_api(league_id: str = None) -> dict:
             "status": status[p]["status"],
         })
 
-    return {"players": players_data, "num_simulations": league["num_simulations"]}
+    return {
+        "players": players_data,
+        "num_simulations": league["num_simulations"],
+        "excluded": excluded,
+    }
 
 
 def main():

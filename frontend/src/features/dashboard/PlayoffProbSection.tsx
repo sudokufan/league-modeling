@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useSimulation } from "@/hooks/useSimulation";
 import type { DerivedLeague, SimPlayerResult } from "@/types";
 
@@ -63,9 +64,31 @@ export default function PlayoffProbSection({
   const isCompleted = league._league_info.status === "completed";
   const leagueId = league._league_info.id;
 
-  const { data, refetch, isFetching, isSuccess } = useSimulation(leagueId);
+  const [excluded, setExcluded] = useState<string[]>([]);
+  const hasRun = useRef(false);
+
+  const { data, refetch, isFetching, isSuccess } = useSimulation(
+    leagueId,
+    excluded,
+  );
+
+  // Once a projection has been run, changing the exclusions re-runs it
+  // (the query key changes, so the cached result no longer applies).
+  useEffect(() => {
+    if (hasRun.current) refetch();
+  }, [excluded, refetch]);
 
   if (isCompleted || league.playoff_spots === 0) return null;
+
+  const toggleExcluded = (name: string) =>
+    setExcluded((prev) =>
+      prev.includes(name) ? prev.filter((p) => p !== name) : [...prev, name],
+    );
+
+  const run = () => {
+    hasRun.current = true;
+    refetch();
+  };
 
   const sorted =
     isSuccess && data?.players
@@ -78,10 +101,40 @@ export default function PlayoffProbSection({
         Predict the Playoffs
       </h2>
 
+      <div className="mb-4">
+        <p className="text-[#888] text-sm mb-2">
+          Sitting out the rest of the season (click to exclude):
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {league.players.map((name) => {
+            const isExcluded = excluded.includes(name);
+            return (
+              <button
+                key={name}
+                onClick={() => toggleExcluded(name)}
+                className={
+                  isExcluded
+                    ? "text-sm px-3 py-1 rounded-full border border-[#e74c3c] text-[#e74c3c] line-through transition-colors"
+                    : "text-sm px-3 py-1 rounded-full border border-[#0f3460] text-[#ccc] hover:border-[#e94560] transition-colors"
+                }
+              >
+                {name}
+              </button>
+            );
+          })}
+        </div>
+        {excluded.length > 0 && (
+          <p className="text-[#888] text-xs mt-2">
+            {excluded.join(", ")} excluded — remaining weeks forfeited, playoff
+            spots go to the players below them.
+          </p>
+        )}
+      </div>
+
       {!isSuccess && !isFetching && (
         <div className="text-center">
           <button
-            onClick={() => refetch()}
+            onClick={run}
             className="bg-[#e94560] hover:bg-[#c73850] text-white font-semibold px-6 py-3 rounded-lg transition-colors"
           >
             Predict the Playoffs

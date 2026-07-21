@@ -109,6 +109,7 @@ export interface SimPlayerResult {
 export interface SimulationResults {
   players: SimPlayerResult[]
   num_simulations: number
+  excluded?: string[]
   error?: string
 }
 

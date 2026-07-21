@@ -30,6 +30,16 @@ class LeagueHandler(BaseHTTPRequestHandler):
         league_ids = params.get("league", [None])
         return league_ids[0]
 
+    def _get_excluded_players(self):
+        """Extract the comma-separated `exclude` query param as a list of names."""
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+        raw = params.get("exclude", [])
+        names = []
+        for value in raw:
+            names.extend(n.strip() for n in value.split(",") if n.strip())
+        return names
+
     def _get_data_file_for_league(self, league_id=None):
         """Get the data file path for the requested or active league."""
         return simulate.get_league_data_path(league_id)
@@ -126,7 +136,8 @@ class LeagueHandler(BaseHTTPRequestHandler):
         """
         try:
             league_id = self._get_requested_league_id()
-            result = simulate.run_simulation_api(league_id=league_id)
+            exclude = self._get_excluded_players()
+            result = simulate.run_simulation_api(league_id=league_id, exclude=exclude)
             league_info = simulate.get_league_info(league_id)
             leagues_config = simulate.load_leagues_config()
             result["_league_info"] = league_info
