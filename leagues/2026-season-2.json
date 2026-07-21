@@ -26,7 +26,10 @@
     "Matthew",
     "Ben Ryder",
     "Ben",
-    "Felix"
+    "Felix",
+    "Ben Smithson",
+    "Jack Smithson",
+    "Alex Moinet"
   ],
   "matches": [
     {
@@ -1348,6 +1351,142 @@
       "player_b": "Martin",
       "games_a": 2,
       "games_b": 1
+    },
+    {
+      "week": 9,
+      "round": 1,
+      "player_a": "Liam (Frome)",
+      "player_b": "Martin",
+      "games_a": 1,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 1,
+      "player_a": "Ben",
+      "player_b": "Ben Smithson",
+      "games_a": 1,
+      "games_b": 1
+    },
+    {
+      "week": 9,
+      "round": 1,
+      "player_a": "Jack Smithson",
+      "player_b": "Brandon",
+      "games_a": 0,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 1,
+      "player_a": "Chris",
+      "player_b": "Stephen",
+      "games_a": 2,
+      "games_b": 0
+    },
+    {
+      "week": 9,
+      "round": 1,
+      "player_a": "Alex Moinet",
+      "player_b": null,
+      "games_a": 2,
+      "games_b": 0
+    },
+    {
+      "week": 9,
+      "round": 2,
+      "player_a": "Brandon",
+      "player_b": "Martin",
+      "games_a": 0,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 2,
+      "player_a": "Alex Moinet",
+      "player_b": "Chris",
+      "games_a": 0,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 2,
+      "player_a": "Ben",
+      "player_b": "Stephen",
+      "games_a": 0,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 2,
+      "player_a": "Ben Smithson",
+      "player_b": null,
+      "games_a": 0,
+      "games_b": 0
+    },
+    {
+      "week": 9,
+      "round": 2,
+      "player_a": "Jack Smithson",
+      "player_b": null,
+      "games_a": 0,
+      "games_b": 0
+    },
+    {
+      "week": 9,
+      "round": 2,
+      "player_a": "Liam (Frome)",
+      "player_b": null,
+      "games_a": 2,
+      "games_b": 0
+    },
+    {
+      "week": 9,
+      "round": 3,
+      "player_a": "Chris",
+      "player_b": "Martin",
+      "games_a": 0,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 3,
+      "player_a": "Liam (Frome)",
+      "player_b": "Brandon",
+      "games_a": 1,
+      "games_b": 2
+    },
+    {
+      "week": 9,
+      "round": 3,
+      "player_a": "Alex Moinet",
+      "player_b": "Ben",
+      "games_a": 2,
+      "games_b": 0
+    },
+    {
+      "week": 9,
+      "round": 3,
+      "player_a": "Ben Smithson",
+      "player_b": null,
+      "games_a": 0,
+      "games_b": 0
+    },
+    {
+      "week": 9,
+      "round": 3,
+      "player_a": "Jack Smithson",
+      "player_b": null,
+      "games_a": 0,
+      "games_b": 0
+    },
+    {
+      "week": 9,
+      "round": 3,
+      "player_a": "Stephen",
+      "player_b": null,
+      "games_a": 2,
+      "games_b": 0
     }
   ]
 }
