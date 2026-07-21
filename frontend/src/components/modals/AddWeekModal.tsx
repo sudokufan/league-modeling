@@ -64,6 +64,17 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
           matchup[field] = Number(value)
         } else {
           matchup[field] = value as string
+          // BYE = automatic win (2-0); AUTO_LOSS = automatic loss (0-0).
+          // Both submit with a null opponent; the games determine which.
+          if (field === 'playerB') {
+            if (value === 'BYE') {
+              matchup.gamesA = 2
+              matchup.gamesB = 0
+            } else if (value === 'AUTO_LOSS') {
+              matchup.gamesA = 0
+              matchup.gamesB = 0
+            }
+          }
         }
         return next
       })
@@ -151,6 +162,25 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
     ])
   }, [matchupsPerRound])
 
+  // Set the number of rounds directly. Existing rounds are preserved; new
+  // rounds are seeded with `matchupsPerRound` empty matchups, extra rounds are
+  // trimmed from the end. Can go below rounds_per_week (e.g. a short week).
+  const applyRoundCount = useCallback((count: number) => {
+    const n = Math.max(1, count)
+    setRounds(prev => {
+      if (prev.length === n) return prev
+      if (prev.length < n) {
+        return [
+          ...prev,
+          ...Array.from({ length: n - prev.length }, () =>
+            Array.from({ length: matchupsPerRound }, emptyMatchup)
+          ),
+        ]
+      }
+      return prev.slice(0, n)
+    })
+  }, [matchupsPerRound])
+
   const removeRound = useCallback((roundIdx: number) => {
     setRounds(prev => prev.filter((_, i) => i !== roundIdx))
   }, [])
@@ -166,10 +196,11 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
           setError(`Round ${r + 1}: Player A is required for all matchups`)
           return
         }
+        const isSolo = m.playerB === 'BYE' || m.playerB === 'AUTO_LOSS'
         matches.push({
           round: r + 1,
           player_a: m.playerA,
-          player_b: m.playerB === 'BYE' ? null : m.playerB || null,
+          player_b: isSolo ? null : m.playerB || null,
           games_a: m.gamesA,
           games_b: m.gamesB,
         })
@@ -220,6 +251,17 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
             />
           </div>
           <div>
+            <label className={labelClass}>Rounds</label>
+            <input
+              type="number"
+              min={1}
+              value={rounds.length}
+              onChange={e => applyRoundCount(Number(e.target.value))}
+              className={`${inputClass} !w-24`}
+              title="Number of rounds played this week"
+            />
+          </div>
+          <div>
             <label className={labelClass}>Matchups / round</label>
             <input
               type="number"
@@ -251,6 +293,7 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
               const keyB = `${roundIdx}-${matchIdx}-playerB`
               const showNewA = keyA in newPlayerInputs
               const showNewB = keyB in newPlayerInputs
+              const isSolo = matchup.playerB === 'BYE' || matchup.playerB === 'AUTO_LOSS'
 
               return (
                 <div
@@ -346,7 +389,8 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
                         {allPlayers.map(p => (
                           <option key={p} value={p}>{p}</option>
                         ))}
-                        <option value="BYE">BYE</option>
+                        <option value="BYE">BYE (auto-win)</option>
+                        <option value="AUTO_LOSS">AUTO-LOSS (no-show / left early)</option>
                         <option value="__NEW__">+ Add New Player</option>
                       </select>
                     )}
@@ -361,7 +405,8 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
                       max={2}
                       value={matchup.gamesA}
                       onChange={e => updateMatchup(roundIdx, matchIdx, 'gamesA', e.target.value)}
-                      className={inputClass}
+                      disabled={isSolo}
+                      className={`${inputClass} disabled:opacity-50`}
                     />
                   </div>
 
@@ -374,7 +419,8 @@ export default function AddWeekModal({ isOpen, onClose, league }: AddWeekModalPr
                       max={2}
                       value={matchup.gamesB}
                       onChange={e => updateMatchup(roundIdx, matchIdx, 'gamesB', e.target.value)}
-                      className={inputClass}
+                      disabled={isSolo}
+                      className={`${inputClass} disabled:opacity-50`}
                     />
                   </div>
 

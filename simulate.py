@@ -244,8 +244,12 @@ def derive_stats(data: dict) -> dict:
         ga, gb = m["games_a"], m["games_b"]
 
         if pb is None or pb == "-" or pb == "":
-            # Bye counts as a win in record but no opponent for OMW
-            per_week_records[week][pa]["w"] += 1
+            # No opponent for OMW. A bye (games recorded) counts as a win;
+            # a 0-0 solo result is an auto-loss (no-show / left early).
+            if ga == 0 and gb == 0:
+                per_week_records[week][pa]["l"] += 1
+            else:
+                per_week_records[week][pa]["w"] += 1
             continue
 
         per_week_opponents[week][pa].append(pb)
