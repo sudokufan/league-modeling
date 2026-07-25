@@ -8,6 +8,7 @@ Loads data from per-league JSON files and derives all stats from raw match data.
 import json
 import os
 import random
+import sys
 from collections import defaultdict
 
 # ============================================================
@@ -132,6 +133,7 @@ def derive_stats(data: dict) -> dict:
         return {
             "config": config, "players": players,
             "unofficial_players": data.get("unofficial_players", []),
+            "playoff_ineligible": data.get("playoff_ineligible", []),
             "weekly_scores": weekly_scores, "overall_stats": overall_stats,
             "attendance_prob": attendance_prob, "weeks_completed": weeks_completed,
             "total_weeks": total_weeks, "rounds_per_week": rounds_per_week,
@@ -347,6 +349,7 @@ def derive_stats(data: dict) -> dict:
         "config": config,
         "players": players,
         "unofficial_players": data.get("unofficial_players", []),
+        "playoff_ineligible": data.get("playoff_ineligible", []),
         "weekly_scores": weekly_scores,
         "overall_stats": overall_stats,
         "attendance_prob": attendance_prob,
@@ -563,6 +566,9 @@ def run_simulation(league: dict) -> dict:
     playoff_spots = league["playoff_spots"]
     num_simulations = league["num_simulations"]
     historical_omw = league["per_week_omw"]  # {week: {player: omw}}
+    # Players who can't take a playoff seat even if their record earns one — their
+    # spot falls to the next eligible player down. They still play/score normally.
+    ineligible = set(league.get("playoff_ineligible", []))
 
     strengths = calculate_all_strengths(overall_stats)
     remaining_weeks = total_weeks - weeks_completed
@@ -604,10 +610,14 @@ def run_simulation(league: dict) -> dict:
         # Tiebreaker: best-7 desc, OMW desc, GWP desc
         standings.sort(key=lambda x: (x[1], x[2], x[3]), reverse=True)
 
+        seed_rank = 0  # counts only eligible players, so ineligible ones are skipped
         for i, (p, b7, omw, gwp) in enumerate(standings):
             pos = i + 1
             position_counts[p][pos] += 1
-            if pos <= playoff_spots:
+            if p in ineligible:
+                continue
+            seed_rank += 1
+            if seed_rank <= playoff_spots:
                 playoff_counts[p] += 1
 
     results = {}
@@ -656,6 +666,26 @@ def check_elimination_clinch(results: dict, players: list, playoff_spots: int) -
 def get_playoff_seedings(standings_order: list, playoff_spots: int) -> list:
     """Return the top N players from standings as seeds."""
     return standings_order[:playoff_spots]
+
+
+def compute_playoff_seeds(league: dict) -> list:
+    """Return the top-N seed names for the playoffs, most-favoured first.
+
+    Ranked by best-N score, then OMW%, then GW% — the same tiebreakers as the
+    standings. Players marked unofficial or playoff-ineligible are skipped
+    entirely, so their would-be spots fall to the next eligible player down.
+    """
+    excluded = set(league.get("unofficial_players", [])) | set(league.get("playoff_ineligible", []))
+    standings = []
+    for p in league["players"]:
+        if p in excluded:
+            continue
+        b_n = best_n_score(league["weekly_scores"][p], league["best_of_n"])
+        omw = league["overall_omw"].get(p, 0)
+        gwp = league["overall_stats"][p]["gwp"]
+        standings.append((p, b_n, omw, gwp))
+    standings.sort(key=lambda x: (x[1], x[2], x[3]), reverse=True)
+    return [p for p, *_ in standings[:league["playoff_spots"]]]
 
 
 def initialize_playoffs(seeds: list) -> dict:
@@ -748,8 +778,41 @@ def run_simulation_api(league_id: str = None, exclude: list = None) -> dict:
     }
 
 
+def reseed_playoffs(league_id: str = None) -> list:
+    """Recompute the playoff bracket from current standings and write it back.
+
+    Respects playoff_ineligible / unofficial_players. Overwrites any existing
+    bracket, so only run this before playoff games have been recorded (or when
+    you deliberately want to rebuild the seeding).
+    """
+    path = get_league_data_path(league_id)
+    data = load_league_data(league_id=league_id)
+    league = derive_stats(data)
+    seeds = compute_playoff_seeds(league)
+    if len(seeds) < league["playoff_spots"]:
+        raise ValueError(
+            f"Only {len(seeds)} eligible players for {league['playoff_spots']} spots"
+        )
+    data["playoffs"] = initialize_playoffs(seeds)
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+    return seeds
+
+
 def main():
-    """CLI entry point: load active league and print basic stats."""
+    """CLI entry point: load active league and print basic stats.
+
+    `python simulate.py reseed [league_id]` rebuilds the playoff bracket from the
+    current standings, skipping playoff-ineligible players.
+    """
+    if len(sys.argv) > 1 and sys.argv[1] == "reseed":
+        league_id = sys.argv[2] if len(sys.argv) > 2 else None
+        seeds = reseed_playoffs(league_id)
+        print("Re-seeded playoffs:")
+        for i, p in enumerate(seeds, 1):
+            print(f"  {i}. {p}")
+        return
+
     data = load_league_data()
     league = derive_stats(data)
     print(f"League: {league['weeks_completed']}/{league['total_weeks']} weeks completed")

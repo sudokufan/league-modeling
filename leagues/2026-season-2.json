@@ -31,6 +31,10 @@
     "Jack Smithson",
     "Alex Moinet"
   ],
+  "playoff_ineligible": [
+    "Roland",
+    "Sami"
+  ],
   "matches": [
     {
       "week": 1,
@@ -1683,14 +1687,14 @@
   ],
   "playoffs": {
     "semifinal_1": {
-      "player_a": "Roland",
-      "player_b": "Sami",
+      "player_a": "Chris",
+      "player_b": "Georgia",
       "games_a": null,
       "games_b": null
     },
     "semifinal_2": {
-      "player_a": "Chris",
-      "player_b": "Alex",
+      "player_a": "Alex",
+      "player_b": "Martin",
       "games_a": null,
       "games_b": null
     },

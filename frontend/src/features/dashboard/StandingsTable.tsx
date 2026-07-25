@@ -26,6 +26,7 @@ export default function StandingsTable({
   const {
     players,
     unofficial_players,
+    playoff_ineligible,
     weekly_scores,
     overall_omw,
     overall_stats,
@@ -47,6 +48,9 @@ export default function StandingsTable({
   };
 
   const unofficialSet = new Set(unofficial_players ?? []);
+  // Ineligible players keep their earned points and standings position, but
+  // can't take a playoff seat — their spot falls to the next eligible player.
+  const ineligibleSet = new Set(playoff_ineligible ?? []);
 
   // Sort official players, then append unofficial at the end.
   // When playoffs are complete, override top-N order with the playoff finish
@@ -71,8 +75,19 @@ export default function StandingsTable({
     });
   const allSorted = [...officialSorted, ...unofficialSorted];
 
-  // Precompute best-N and maxPossible for all official players to determine clinch status
-  const officialPlayers = players.filter((p) => !unofficialSet.has(p));
+  // The players actually holding a playoff seat: the top `playoff_spots` in the
+  // regular-season order, skipping anyone ineligible (whose spot drops down).
+  const qualifierSet = new Set<string>();
+  for (const p of officialSorted) {
+    if (ineligibleSet.has(p)) continue;
+    if (qualifierSet.size < playoff_spots) qualifierSet.add(p);
+  }
+
+  // Precompute best-N and maxPossible for all eligible official players to
+  // determine clinch status (ineligible players don't compete for spots).
+  const officialPlayers = players.filter(
+    (p) => !unofficialSet.has(p) && !ineligibleSet.has(p),
+  );
   const playerBest: Record<string, number> = {};
   const playerMax: Record<string, number> = {};
   for (const p of officialPlayers) {
@@ -86,7 +101,7 @@ export default function StandingsTable({
   // When the season is complete, all top-N players are definitively in.
   const seasonComplete = weeks_completed >= total_weeks;
   function hasClinched(player: string): boolean {
-    if (unofficialSet.has(player)) return false;
+    if (unofficialSet.has(player) || ineligibleSet.has(player)) return false;
     if (seasonComplete) return true;
     const myBest = playerBest[player];
     const couldOvertake = officialPlayers.filter(
@@ -186,8 +201,9 @@ export default function StandingsTable({
           <tbody>
             {allSorted.map((player, idx) => {
               const isUnofficial = unofficialSet.has(player);
+              const isIneligible = ineligibleSet.has(player);
               const rank = idx + 1;
-              const isTop = !isUnofficial && rank <= playoff_spots;
+              const isTop = qualifierSet.has(player);
               const scores = weekly_scores[player] ?? [];
               const best = bestNScore(scores, best_of_n);
               const maxPossible = maxPossibleBestN(scores, weeks_completed, total_weeks, best_of_n, rounds_per_week);
@@ -248,11 +264,23 @@ export default function StandingsTable({
                   </td>
                   <td
                     className={`px-2 py-2 text-left border-b border-[#1a1a2e] font-semibold whitespace-nowrap ${
-                      isChamp ? "text-[#f1c40f]" : "text-[#f0f0f0]"
+                      isChamp
+                        ? "text-[#f1c40f]"
+                        : isIneligible
+                          ? "text-[#999]"
+                          : "text-[#f0f0f0]"
                     }`}
                   >
                     {player}
                     {isUnofficial ? " *" : ""}
+                    {isIneligible && (
+                      <span
+                        className="ml-2 text-[0.68em] uppercase tracking-wider text-[#e74c3c] border border-[#e74c3c] rounded px-1 py-0.5 align-middle"
+                        title="Ineligible for the playoffs — spot passes to the next player down"
+                      >
+                        Ineligible
+                      </span>
+                    )}
                   </td>
                   {Array.from({ length: total_weeks }, (_, i) => {
                     const score = i < scores.length ? scores[i] : undefined;
@@ -314,6 +342,9 @@ export default function StandingsTable({
         Top {playoff_spots} qualify for playoffs &middot; Best {best_of_n} of{" "}
         {total_weeks} weekly scores count
         {onWeekClick ? " \u00b7 Click a week header to view details" : ""}
+        {ineligibleSet.size > 0
+          ? " \u00b7 Ineligible players keep their points but can't take a playoff seat"
+          : ""}
       </p>
     </div>
   );

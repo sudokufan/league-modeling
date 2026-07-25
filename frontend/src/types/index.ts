@@ -72,6 +72,7 @@ export interface DerivedLeague {
   config: LeagueConfig
   players: string[]
   unofficial_players: string[]
+  playoff_ineligible?: string[]                      // players barred from a playoff seat
   weekly_scores: Record<string, (number | null)[]>  // player -> scores array
   overall_stats: Record<string, PlayerStats>
   attendance_prob: Record<string, number>

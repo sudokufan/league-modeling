@@ -297,20 +297,14 @@ class LeagueHandler(BaseHTTPRequestHandler):
         data["matches"].sort(key=lambda m: (m["week"], m["round"]))
 
         # Auto-initialize playoffs once the regular season is complete.
-        # Seeds: best-7 desc, then OMW%, then GW% — matching simulate.run_simulation.
+        # compute_playoff_seeds ranks by best-N/OMW%/GW% and skips unofficial and
+        # playoff-ineligible players, so their spots fall to the next eligible player.
         if not data.get("playoffs"):
             weeks_with_data = {m["week"] for m in data["matches"]}
             if weeks_with_data and max(weeks_with_data) >= total_weeks:
                 try:
                     league = simulate.derive_stats(data)
-                    standings = []
-                    for p in league["players"]:
-                        b7 = simulate.best_n_score(league["weekly_scores"][p], league["best_of_n"])
-                        omw = league["overall_omw"].get(p, 0)
-                        gwp = league["overall_stats"][p]["gwp"]
-                        standings.append((p, b7, omw, gwp))
-                    standings.sort(key=lambda x: (x[1], x[2], x[3]), reverse=True)
-                    seeds = [p for p, *_ in standings[:league["playoff_spots"]]]
+                    seeds = simulate.compute_playoff_seeds(league)
                     data["playoffs"] = simulate.initialize_playoffs(seeds)
                 except Exception as e:
                     print(f"Warning: failed to auto-initialize playoffs: {e}", file=sys.stderr)
