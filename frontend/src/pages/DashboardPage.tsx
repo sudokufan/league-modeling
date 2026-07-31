@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useLeagueData } from '@/hooks/useLeagueData'
 import { useAddResults } from '@/hooks/useMutations'
-import { getDefendingChampion } from '@/lib/standings'
+import { arePlayoffsComplete, getDefendingChampion } from '@/lib/standings'
 import AppHeader from '@/components/layout/AppHeader'
 import StandingsTable from '@/features/dashboard/StandingsTable'
 import WeekDetailPanel from '@/features/dashboard/WeekDetailPanel'
@@ -34,7 +34,12 @@ export default function DashboardPage() {
   }, [league])
 
   const { data: prevLeague } = useLeagueData(prevLeagueId, !!prevLeagueId)
-  const defendingChampion = prevLeague ? getDefendingChampion(prevLeague) : null
+
+  // Once this league's own playoffs are done, its champion takes over the crown;
+  // until then it still belongs to the previous completed league's winner.
+  const defendingChampion =
+    (league && arePlayoffsComplete(league.playoffs) ? getDefendingChampion(league) : null) ??
+    (prevLeague ? getDefendingChampion(prevLeague) : null)
 
   // Local UI state
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null)

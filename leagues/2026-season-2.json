@@ -1689,26 +1689,26 @@
     "semifinal_1": {
       "player_a": "Chris",
       "player_b": "Georgia",
-      "games_a": null,
-      "games_b": null
+      "games_a": 3,
+      "games_b": 2
     },
     "semifinal_2": {
       "player_a": "Alex",
       "player_b": "Martin",
-      "games_a": null,
-      "games_b": null
+      "games_a": 2,
+      "games_b": 3
     },
     "final": {
-      "player_a": null,
-      "player_b": null,
-      "games_a": null,
-      "games_b": null
+      "player_a": "Chris",
+      "player_b": "Martin",
+      "games_a": 3,
+      "games_b": 1
     },
     "third_place": {
-      "player_a": null,
-      "player_b": null,
-      "games_a": null,
-      "games_b": null
+      "player_a": "Georgia",
+      "player_b": "Alex",
+      "games_a": 1,
+      "games_b": 3
     }
   }
 }

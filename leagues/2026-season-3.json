@@ -1,0 +1,11 @@
+{
+  "config": {
+    "total_weeks": 10,
+    "rounds_per_week": 4,
+    "best_of_n": 7,
+    "playoff_spots": 4,
+    "num_simulations": 50000
+  },
+  "players": [],
+  "matches": []
+}

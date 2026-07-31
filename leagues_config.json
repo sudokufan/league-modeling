@@ -1,5 +1,5 @@
 {
-  "active_league": "2026-season-2",
+  "active_league": "2026-season-3",
   "leagues": [
     {
       "id": "2025-season-1",
@@ -21,9 +21,17 @@
       "id": "2026-season-2",
       "name": "2026 Season 2",
       "file": "2026-season-2.json",
-      "status": "active",
+      "status": "completed",
       "created": "2026-05-16",
       "display_name": "Strixhaven League"
+    },
+    {
+      "id": "2026-season-3",
+      "name": "2026 Season 3",
+      "file": "2026-season-3.json",
+      "status": "active",
+      "created": "2026-07-31",
+      "display_name": "Reality Fracture League"
     }
   ]
 }
