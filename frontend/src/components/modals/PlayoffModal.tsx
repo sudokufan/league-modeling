@@ -23,7 +23,8 @@ const btnPrimary =
 const btnSecondary =
   'bg-[#0f3460] text-[#e0e0e0] px-4 py-2 rounded-lg hover:bg-[#153a72]'
 
-const SCORE_OPTIONS = [0, 1, 2]
+// Playoff matches are best-of-five
+const SCORE_OPTIONS = [0, 1, 2, 3]
 
 function getWinnerLoser(
   gamesA: number | null,
@@ -34,8 +35,8 @@ function getWinnerLoser(
   if (gamesA === null || gamesB === null) return { winner: null, loser: null }
   if (gamesA > gamesB) return { winner: playerA, loser: playerB }
   if (gamesB > gamesA) return { winner: playerB, loser: playerA }
-  // Draw: higher seed (player A) wins
-  return { winner: playerA, loser: playerB }
+  // Playoff rounds are untimed, so an equal score is a data-entry error, not a draw.
+  return { winner: null, loser: null }
 }
 
 function ScoreSelect({
@@ -127,34 +128,39 @@ export default function PlayoffModal({ isOpen, onClose, league }: PlayoffModalPr
     setError(null)
 
     const payload: PlayoffResultsPayload = {}
-    let hasData = false
 
-    if (sf1.gamesA !== null && sf1.gamesB !== null) {
-      payload.semifinal_1 = { games_a: sf1.gamesA, games_b: sf1.gamesB }
-      hasData = true
-    }
-    if (sf2.gamesA !== null && sf2.gamesB !== null) {
-      payload.semifinal_2 = { games_a: sf2.gamesA, games_b: sf2.gamesB }
-      hasData = true
-    }
-    if (final.gamesA !== null && final.gamesB !== null) {
-      if (!semisComplete) {
-        setError('Both semifinals must be completed before entering the final')
+    const rounds = [
+      { key: 'semifinal_1', label: 'Semifinal 1', scores: sf1, gate: null },
+      { key: 'semifinal_2', label: 'Semifinal 2', scores: sf2, gate: null },
+      {
+        key: 'final',
+        label: 'Final',
+        scores: final,
+        gate: 'Both semifinals must be completed before entering the final',
+      },
+      {
+        key: 'third_place',
+        label: 'Third place',
+        scores: third,
+        gate: 'Both semifinals must be completed before entering the third place match',
+      },
+    ] as const
+
+    for (const { key, label, scores, gate } of rounds) {
+      const { gamesA, gamesB } = scores
+      if (gamesA === null || gamesB === null) continue
+      if (gate && !semisComplete) {
+        setError(gate)
         return
       }
-      payload.final = { games_a: final.gamesA, games_b: final.gamesB }
-      hasData = true
-    }
-    if (third.gamesA !== null && third.gamesB !== null) {
-      if (!semisComplete) {
-        setError('Both semifinals must be completed before entering the third place match')
+      if (gamesA === gamesB) {
+        setError(`${label}: playoff matches are untimed and cannot end in a draw`)
         return
       }
-      payload.third_place = { games_a: third.gamesA, games_b: third.gamesB }
-      hasData = true
+      payload[key] = { games_a: gamesA, games_b: gamesB }
     }
 
-    if (!hasData) {
+    if (Object.keys(payload).length === 0) {
       setError('Please enter at least one match result')
       return
     }
