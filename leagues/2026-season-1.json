@@ -7,16 +7,16 @@
     "num_simulations": 50000
   },
   "players": [
-    "Dom",
-    "Alex",
+    "Dom P",
+    "Alex D",
     "Sami",
-    "Roland",
+    "Roland K",
     "Derek",
-    "Brandon",
-    "Martin",
+    "Brandon M",
+    "Martin R",
     "Josh",
-    "Georgia",
-    "Liam",
+    "Georgia CB",
+    "Liam TC",
     "Roman",
     "Dan (Bristol)",
     "Stephen",
@@ -29,7 +29,7 @@
     {
       "week": 1,
       "round": 1,
-      "player_a": "Dom",
+      "player_a": "Dom P",
       "player_b": "Dan (Bristol)",
       "games_a": 2,
       "games_b": 0
@@ -37,7 +37,7 @@
     {
       "week": 1,
       "round": 1,
-      "player_a": "Alex",
+      "player_a": "Alex D",
       "player_b": "Sami",
       "games_a": 1,
       "games_b": 2
@@ -45,7 +45,7 @@
     {
       "week": 1,
       "round": 1,
-      "player_a": "Roland",
+      "player_a": "Roland K",
       "player_b": "Stephen",
       "games_a": 2,
       "games_b": 1
@@ -53,7 +53,7 @@
     {
       "week": 1,
       "round": 1,
-      "player_a": "Martin",
+      "player_a": "Martin R",
       "player_b": "Roman",
       "games_a": 0,
       "games_b": 2
@@ -61,7 +61,7 @@
     {
       "week": 1,
       "round": 1,
-      "player_a": "Georgia",
+      "player_a": "Georgia CB",
       "player_b": "Vasudef",
       "games_a": 1,
       "games_b": 2
@@ -93,7 +93,7 @@
     {
       "week": 1,
       "round": 2,
-      "player_a": "Dom",
+      "player_a": "Dom P",
       "player_b": "Roman",
       "games_a": 2,
       "games_b": 0
@@ -102,14 +102,14 @@
       "week": 1,
       "round": 2,
       "player_a": "Josh",
-      "player_b": "Roland",
+      "player_b": "Roland K",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 1,
       "round": 2,
-      "player_a": "Martin",
+      "player_a": "Martin R",
       "player_b": "Stephen",
       "games_a": 1,
       "games_b": 2
@@ -117,15 +117,15 @@
     {
       "week": 1,
       "round": 2,
-      "player_a": "Georgia",
-      "player_b": "Alex",
+      "player_a": "Georgia CB",
+      "player_b": "Alex D",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 1,
       "round": 3,
-      "player_a": "Roland",
+      "player_a": "Roland K",
       "player_b": "Roman",
       "games_a": 1,
       "games_b": 2
@@ -134,14 +134,14 @@
       "week": 1,
       "round": 3,
       "player_a": "Sami",
-      "player_b": "Dom",
+      "player_b": "Dom P",
       "games_a": 0,
       "games_b": 2
     },
     {
       "week": 1,
       "round": 3,
-      "player_a": "Alex",
+      "player_a": "Alex D",
       "player_b": "Vasudef",
       "games_a": 0,
       "games_b": 2
@@ -149,7 +149,7 @@
     {
       "week": 1,
       "round": 3,
-      "player_a": "Georgia",
+      "player_a": "Georgia CB",
       "player_b": "Stephen",
       "games_a": 1,
       "games_b": 2
@@ -157,7 +157,7 @@
     {
       "week": 1,
       "round": 3,
-      "player_a": "Martin",
+      "player_a": "Martin R",
       "player_b": null,
       "games_a": 2,
       "games_b": 0
@@ -174,14 +174,14 @@
       "week": 2,
       "round": 1,
       "player_a": "Derek",
-      "player_b": "Dom",
+      "player_b": "Dom P",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 2,
       "round": 1,
-      "player_a": "Alex",
+      "player_a": "Alex D",
       "player_b": "Sami",
       "games_a": 2,
       "games_b": 0
@@ -189,8 +189,8 @@
     {
       "week": 2,
       "round": 1,
-      "player_a": "Roland",
-      "player_b": "Martin",
+      "player_a": "Roland K",
+      "player_b": "Martin R",
       "games_a": 1,
       "games_b": 2
     },
@@ -198,7 +198,7 @@
       "week": 2,
       "round": 1,
       "player_a": "Josh",
-      "player_b": "Brandon",
+      "player_b": "Brandon M",
       "games_a": 2,
       "games_b": 1
     },
@@ -213,15 +213,15 @@
     {
       "week": 2,
       "round": 2,
-      "player_a": "Alex",
-      "player_b": "Martin",
+      "player_a": "Alex D",
+      "player_b": "Martin R",
       "games_a": 2,
       "games_b": 0
     },
     {
       "week": 2,
       "round": 2,
-      "player_a": "Roland",
+      "player_a": "Roland K",
       "player_b": "Sami",
       "games_a": 2,
       "games_b": 1
@@ -229,8 +229,8 @@
     {
       "week": 2,
       "round": 2,
-      "player_a": "Dom",
-      "player_b": "Brandon",
+      "player_a": "Dom P",
+      "player_b": "Brandon M",
       "games_a": 2,
       "games_b": 0
     },
@@ -238,15 +238,15 @@
       "week": 2,
       "round": 3,
       "player_a": "Derek",
-      "player_b": "Alex",
+      "player_b": "Alex D",
       "games_a": 2,
       "games_b": 0
     },
     {
       "week": 2,
       "round": 3,
-      "player_a": "Dom",
-      "player_b": "Martin",
+      "player_a": "Dom P",
+      "player_b": "Martin R",
       "games_a": 2,
       "games_b": 1
     },
@@ -254,7 +254,7 @@
       "week": 2,
       "round": 3,
       "player_a": "Josh",
-      "player_b": "Roland",
+      "player_b": "Roland K",
       "games_a": 1,
       "games_b": 1
     },
@@ -262,7 +262,7 @@
       "week": 2,
       "round": 3,
       "player_a": "Sami",
-      "player_b": "Brandon",
+      "player_b": "Brandon M",
       "games_a": 2,
       "games_b": 0
     },
@@ -270,14 +270,14 @@
       "week": 3,
       "round": 1,
       "player_a": "Derek",
-      "player_b": "Martin",
+      "player_b": "Martin R",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 3,
       "round": 1,
-      "player_a": "Georgia",
+      "player_a": "Georgia CB",
       "player_b": null,
       "games_a": 2,
       "games_b": 0
@@ -285,16 +285,16 @@
     {
       "week": 3,
       "round": 1,
-      "player_a": "Alex",
-      "player_b": "Dom",
+      "player_a": "Alex D",
+      "player_b": "Dom P",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 3,
       "round": 1,
-      "player_a": "Roland",
-      "player_b": "Brandon",
+      "player_a": "Roland K",
+      "player_b": "Brandon M",
       "games_a": 2,
       "games_b": 0
     },
@@ -309,7 +309,7 @@
     {
       "week": 3,
       "round": 2,
-      "player_a": "Roland",
+      "player_a": "Roland K",
       "player_b": "Stephen",
       "games_a": 1,
       "games_b": 0
@@ -325,16 +325,16 @@
     {
       "week": 3,
       "round": 2,
-      "player_a": "Georgia",
-      "player_b": "Dom",
+      "player_a": "Georgia CB",
+      "player_b": "Dom P",
       "games_a": 0,
       "games_b": 2
     },
     {
       "week": 3,
       "round": 2,
-      "player_a": "Alex",
-      "player_b": "Brandon",
+      "player_a": "Alex D",
+      "player_b": "Brandon M",
       "games_a": 2,
       "games_b": 0
     },
@@ -342,7 +342,7 @@
       "week": 3,
       "round": 2,
       "player_a": "Sami",
-      "player_b": "Martin",
+      "player_b": "Martin R",
       "games_a": 2,
       "games_b": 1
     },
@@ -357,15 +357,15 @@
     {
       "week": 3,
       "round": 3,
-      "player_a": "Georgia",
-      "player_b": "Alex",
+      "player_a": "Georgia CB",
+      "player_b": "Alex D",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 3,
       "round": 3,
-      "player_a": "Roland",
+      "player_a": "Roland K",
       "player_b": "Sami",
       "games_a": 0,
       "games_b": 2
@@ -373,15 +373,15 @@
     {
       "week": 3,
       "round": 3,
-      "player_a": "Dom",
-      "player_b": "Martin",
+      "player_a": "Dom P",
+      "player_b": "Martin R",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 3,
       "round": 3,
-      "player_a": "Brandon",
+      "player_a": "Brandon M",
       "player_b": null,
       "games_a": 2,
       "games_b": 0
@@ -390,7 +390,7 @@
       "week": 4,
       "round": 1,
       "player_a": "Dan",
-      "player_b": "Georgia",
+      "player_b": "Georgia CB",
       "games_a": 0,
       "games_b": 2
     },
@@ -398,15 +398,15 @@
       "week": 4,
       "round": 1,
       "player_a": "Derek",
-      "player_b": "Roland",
+      "player_b": "Roland K",
       "games_a": 0,
       "games_b": 1
     },
     {
       "week": 4,
       "round": 1,
-      "player_a": "Alex",
-      "player_b": "Martin",
+      "player_a": "Alex D",
+      "player_b": "Martin R",
       "games_a": 2,
       "games_b": 1
     },
@@ -421,8 +421,8 @@
     {
       "week": 4,
       "round": 1,
-      "player_a": "Brandon",
-      "player_b": "Dom",
+      "player_a": "Brandon M",
+      "player_b": "Dom P",
       "games_a": 0,
       "games_b": 2
     },
@@ -430,7 +430,7 @@
       "week": 4,
       "round": 2,
       "player_a": "Dan",
-      "player_b": "Brandon",
+      "player_b": "Brandon M",
       "games_a": 0,
       "games_b": 2
     },
@@ -445,16 +445,16 @@
     {
       "week": 4,
       "round": 2,
-      "player_a": "Georgia",
-      "player_b": "Martin",
+      "player_a": "Georgia CB",
+      "player_b": "Martin R",
       "games_a": 0,
       "games_b": 2
     },
     {
       "week": 4,
       "round": 2,
-      "player_a": "Alex",
-      "player_b": "Roland",
+      "player_a": "Alex D",
+      "player_b": "Roland K",
       "games_a": 1,
       "games_b": 1
     },
@@ -462,7 +462,7 @@
       "week": 4,
       "round": 2,
       "player_a": "Sami",
-      "player_b": "Dom",
+      "player_b": "Dom P",
       "games_a": 0,
       "games_b": 2
     },
@@ -478,14 +478,14 @@
       "week": 4,
       "round": 3,
       "player_a": "Derek",
-      "player_b": "Martin",
+      "player_b": "Martin R",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 4,
       "round": 3,
-      "player_a": "Georgia",
+      "player_a": "Georgia CB",
       "player_b": "Sami",
       "games_a": 0,
       "games_b": 2
@@ -493,16 +493,16 @@
     {
       "week": 4,
       "round": 3,
-      "player_a": "Alex",
-      "player_b": "Dom",
+      "player_a": "Alex D",
+      "player_b": "Dom P",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 4,
       "round": 3,
-      "player_a": "Roland",
-      "player_b": "Brandon",
+      "player_a": "Roland K",
+      "player_b": "Brandon M",
       "games_a": 1,
       "games_b": 1
     },
@@ -517,15 +517,15 @@
     {
       "week": 5,
       "round": 1,
-      "player_a": "Georgia",
-      "player_b": "Liam",
+      "player_a": "Georgia CB",
+      "player_b": "Liam TC",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 5,
       "round": 1,
-      "player_a": "Alex",
+      "player_a": "Alex D",
       "player_b": "Kenic",
       "games_a": 2,
       "games_b": 0
@@ -533,7 +533,7 @@
     {
       "week": 5,
       "round": 1,
-      "player_a": "Roland",
+      "player_a": "Roland K",
       "player_b": "Sami",
       "games_a": 2,
       "games_b": 0
@@ -541,7 +541,7 @@
     {
       "week": 5,
       "round": 1,
-      "player_a": "Brandon",
+      "player_a": "Brandon M",
       "player_b": null,
       "games_a": 2,
       "games_b": 0
@@ -558,14 +558,14 @@
       "week": 5,
       "round": 2,
       "player_a": "Derek",
-      "player_b": "Brandon",
+      "player_b": "Brandon M",
       "games_a": 0,
       "games_b": 2
     },
     {
       "week": 5,
       "round": 2,
-      "player_a": "Georgia",
+      "player_a": "Georgia CB",
       "player_b": "Kenic",
       "games_a": 0,
       "games_b": 1
@@ -573,8 +573,8 @@
     {
       "week": 5,
       "round": 2,
-      "player_a": "Roland",
-      "player_b": "Alex",
+      "player_a": "Roland K",
+      "player_b": "Alex D",
       "games_a": 0,
       "games_b": 2
     },
@@ -582,7 +582,7 @@
       "week": 5,
       "round": 2,
       "player_a": "Sami",
-      "player_b": "Liam",
+      "player_b": "Liam TC",
       "games_a": 0,
       "games_b": 2
     },
@@ -590,7 +590,7 @@
       "week": 5,
       "round": 3,
       "player_a": "Dan",
-      "player_b": "Georgia",
+      "player_b": "Georgia CB",
       "games_a": 0,
       "games_b": 2
     },
@@ -598,14 +598,14 @@
       "week": 5,
       "round": 3,
       "player_a": "Derek",
-      "player_b": "Alex",
+      "player_b": "Alex D",
       "games_a": 0,
       "games_b": 2
     },
     {
       "week": 5,
       "round": 3,
-      "player_a": "Roland",
+      "player_a": "Roland K",
       "player_b": "Kenic",
       "games_a": 0,
       "games_b": 2
@@ -621,15 +621,15 @@
     {
       "week": 5,
       "round": 3,
-      "player_a": "Brandon",
-      "player_b": "Liam",
+      "player_a": "Brandon M",
+      "player_b": "Liam TC",
       "games_a": 0,
       "games_b": 2
     },
     {
       "week": 6,
       "round": 1,
-      "player_a": "Liam",
+      "player_a": "Liam TC",
       "player_b": null,
       "games_a": 0,
       "games_b": 0
@@ -637,7 +637,7 @@
     {
       "week": 6,
       "round": 1,
-      "player_a": "Georgia",
+      "player_a": "Georgia CB",
       "player_b": "Sami",
       "games_a": 2,
       "games_b": 1
@@ -646,15 +646,15 @@
       "week": 6,
       "round": 1,
       "player_a": "Vasudef",
-      "player_b": "Brandon",
+      "player_b": "Brandon M",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 6,
       "round": 1,
-      "player_a": "Dom",
-      "player_b": "Martin",
+      "player_a": "Dom P",
+      "player_b": "Martin R",
       "games_a": 1,
       "games_b": 2
     },
@@ -669,15 +669,15 @@
     {
       "week": 6,
       "round": 2,
-      "player_a": "Brandon",
-      "player_b": "Martin",
+      "player_a": "Brandon M",
+      "player_b": "Martin R",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 6,
       "round": 2,
-      "player_a": "Georgia",
+      "player_a": "Georgia CB",
       "player_b": "Stephen",
       "games_a": 0,
       "games_b": 2
@@ -693,8 +693,8 @@
     {
       "week": 6,
       "round": 2,
-      "player_a": "Liam",
-      "player_b": "Dom",
+      "player_a": "Liam TC",
+      "player_b": "Dom P",
       "games_a": 2,
       "games_b": 1
     },
@@ -709,7 +709,7 @@
     {
       "week": 6,
       "round": 3,
-      "player_a": "Brandon",
+      "player_a": "Brandon M",
       "player_b": "Stephen",
       "games_a": 2,
       "games_b": 0
@@ -718,15 +718,15 @@
       "week": 6,
       "round": 3,
       "player_a": "Derek",
-      "player_b": "Martin",
+      "player_b": "Martin R",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 6,
       "round": 3,
-      "player_a": "Georgia",
-      "player_b": "Liam",
+      "player_a": "Georgia CB",
+      "player_b": "Liam TC",
       "games_a": 1,
       "games_b": 1
     },
@@ -734,7 +734,7 @@
       "week": 6,
       "round": 3,
       "player_a": "Sami",
-      "player_b": "Dom",
+      "player_b": "Dom P",
       "games_a": 2,
       "games_b": 1
     },
@@ -750,30 +750,30 @@
       "week": 7,
       "round": 1,
       "player_a": "Derek",
-      "player_b": "Georgia",
+      "player_b": "Georgia CB",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 7,
       "round": 1,
-      "player_a": "Alex",
-      "player_b": "Dom",
+      "player_a": "Alex D",
+      "player_b": "Dom P",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 7,
       "round": 1,
-      "player_a": "Roland",
-      "player_b": "Martin",
+      "player_a": "Roland K",
+      "player_b": "Martin R",
       "games_a": 2,
       "games_b": 0
     },
     {
       "week": 7,
       "round": 1,
-      "player_a": "Liam",
+      "player_a": "Liam TC",
       "player_b": "Stephen",
       "games_a": 2,
       "games_b": 0
@@ -797,16 +797,16 @@
     {
       "week": 7,
       "round": 2,
-      "player_a": "Liam",
-      "player_b": "Georgia",
+      "player_a": "Liam TC",
+      "player_b": "Georgia CB",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 7,
       "round": 2,
-      "player_a": "Alex",
-      "player_b": "Roland",
+      "player_a": "Alex D",
+      "player_b": "Roland K",
       "games_a": 2,
       "games_b": 0
     },
@@ -814,14 +814,14 @@
       "week": 7,
       "round": 2,
       "player_a": "Stephen",
-      "player_b": "Martin",
+      "player_b": "Martin R",
       "games_a": 2,
       "games_b": 0
     },
     {
       "week": 7,
       "round": 2,
-      "player_a": "Dom",
+      "player_a": "Dom P",
       "player_b": null,
       "games_a": 2,
       "games_b": 0
@@ -830,23 +830,23 @@
       "week": 7,
       "round": 3,
       "player_a": "Derek",
-      "player_b": "Alex",
+      "player_b": "Alex D",
       "games_a": 2,
       "games_b": 0
     },
     {
       "week": 7,
       "round": 3,
-      "player_a": "Roland",
-      "player_b": "Georgia",
+      "player_a": "Roland K",
+      "player_b": "Georgia CB",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 7,
       "round": 3,
-      "player_a": "Liam",
-      "player_b": "Dom",
+      "player_a": "Liam TC",
+      "player_b": "Dom P",
       "games_a": 2,
       "games_b": 1
     },
@@ -861,7 +861,7 @@
     {
       "week": 7,
       "round": 3,
-      "player_a": "Martin",
+      "player_a": "Martin R",
       "player_b": null,
       "games_a": 2,
       "games_b": 0
@@ -877,15 +877,15 @@
     {
       "week": 8,
       "round": 1,
-      "player_a": "Georgia",
-      "player_b": "Liam",
+      "player_a": "Georgia CB",
+      "player_b": "Liam TC",
       "games_a": 0,
       "games_b": 2
     },
     {
       "week": 8,
       "round": 1,
-      "player_a": "Alex",
+      "player_a": "Alex D",
       "player_b": "Sami",
       "games_a": 1,
       "games_b": 2
@@ -894,15 +894,15 @@
       "week": 8,
       "round": 1,
       "player_a": "Stanley",
-      "player_b": "Roland",
+      "player_b": "Roland K",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 8,
       "round": 1,
-      "player_a": "Dom",
-      "player_b": "Martin",
+      "player_a": "Dom P",
+      "player_b": "Martin R",
       "games_a": 2,
       "games_b": 0
     },
@@ -917,15 +917,15 @@
     {
       "week": 8,
       "round": 2,
-      "player_a": "Liam",
-      "player_b": "Roland",
+      "player_a": "Liam TC",
+      "player_b": "Roland K",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 8,
       "round": 2,
-      "player_a": "Dom",
+      "player_a": "Dom P",
       "player_b": "Stanley",
       "games_a": 0,
       "games_b": 2
@@ -933,7 +933,7 @@
     {
       "week": 8,
       "round": 2,
-      "player_a": "Martin",
+      "player_a": "Martin R",
       "player_b": "Derek",
       "games_a": 2,
       "games_b": 0
@@ -941,8 +941,8 @@
     {
       "week": 8,
       "round": 2,
-      "player_a": "Alex",
-      "player_b": "Georgia",
+      "player_a": "Alex D",
+      "player_b": "Georgia CB",
       "games_a": 2,
       "games_b": 0
     },
@@ -950,14 +950,14 @@
       "week": 8,
       "round": 3,
       "player_a": "Sami",
-      "player_b": "Liam",
+      "player_b": "Liam TC",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 8,
       "round": 3,
-      "player_a": "Alex",
+      "player_a": "Alex D",
       "player_b": "Vasudef",
       "games_a": 2,
       "games_b": 1
@@ -965,15 +965,15 @@
     {
       "week": 8,
       "round": 3,
-      "player_a": "Roland",
-      "player_b": "Dom",
+      "player_a": "Roland K",
+      "player_b": "Dom P",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 8,
       "round": 3,
-      "player_a": "Martin",
+      "player_a": "Martin R",
       "player_b": "Stanley",
       "games_a": 1,
       "games_b": 2
@@ -982,31 +982,31 @@
       "week": 8,
       "round": 3,
       "player_a": "Derek",
-      "player_b": "Georgia",
+      "player_b": "Georgia CB",
       "games_a": 2,
       "games_b": 0
     },
     {
       "week": 9,
       "round": 1,
-      "player_a": "Georgia",
-      "player_b": "Martin",
+      "player_a": "Georgia CB",
+      "player_b": "Martin R",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 9,
       "round": 1,
-      "player_a": "Alex",
-      "player_b": "Dom",
+      "player_a": "Alex D",
+      "player_b": "Dom P",
       "games_a": 0,
       "games_b": 2
     },
     {
       "week": 9,
       "round": 1,
-      "player_a": "Roland",
-      "player_b": "Brandon",
+      "player_a": "Roland K",
+      "player_b": "Brandon M",
       "games_a": 2,
       "games_b": 1
     },
@@ -1021,23 +1021,23 @@
     {
       "week": 9,
       "round": 2,
-      "player_a": "Georgia",
-      "player_b": "Alex",
+      "player_a": "Georgia CB",
+      "player_b": "Alex D",
       "games_a": 0,
       "games_b": 2
     },
     {
       "week": 9,
       "round": 2,
-      "player_a": "Roland",
-      "player_b": "Martin",
+      "player_a": "Roland K",
+      "player_b": "Martin R",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 9,
       "round": 2,
-      "player_a": "Brandon",
+      "player_a": "Brandon M",
       "player_b": null,
       "games_a": 2,
       "games_b": 0
@@ -1045,7 +1045,7 @@
     {
       "week": 9,
       "round": 2,
-      "player_a": "Dom",
+      "player_a": "Dom P",
       "player_b": "Stephen",
       "games_a": 2,
       "games_b": 1
@@ -1053,8 +1053,8 @@
     {
       "week": 9,
       "round": 3,
-      "player_a": "Dom",
-      "player_b": "Roland",
+      "player_a": "Dom P",
+      "player_b": "Roland K",
       "games_a": 0,
       "games_b": 2
     },
@@ -1062,22 +1062,22 @@
       "week": 9,
       "round": 3,
       "player_a": "Stephen",
-      "player_b": "Brandon",
+      "player_b": "Brandon M",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 9,
       "round": 3,
-      "player_a": "Alex",
-      "player_b": "Martin",
+      "player_a": "Alex D",
+      "player_b": "Martin R",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 9,
       "round": 3,
-      "player_a": "Georgia",
+      "player_a": "Georgia CB",
       "player_b": null,
       "games_a": 2,
       "games_b": 0
@@ -1085,16 +1085,16 @@
     {
       "week": 10,
       "round": 1,
-      "player_a": "Alex",
-      "player_b": "Dom",
+      "player_a": "Alex D",
+      "player_b": "Dom P",
       "games_a": 0,
       "games_b": 2
     },
     {
       "week": 10,
       "round": 1,
-      "player_a": "Liam",
-      "player_b": "Roland",
+      "player_a": "Liam TC",
+      "player_b": "Roland K",
       "games_a": 2,
       "games_b": 0
     },
@@ -1102,15 +1102,15 @@
       "week": 10,
       "round": 1,
       "player_a": "Stephen",
-      "player_b": "Brandon",
+      "player_b": "Brandon M",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 10,
       "round": 1,
-      "player_a": "Georgia",
-      "player_b": "Martin",
+      "player_a": "Georgia CB",
+      "player_b": "Martin R",
       "games_a": 0,
       "games_b": 2
     },
@@ -1126,7 +1126,7 @@
       "week": 10,
       "round": 2,
       "player_a": "Derek",
-      "player_b": "Liam",
+      "player_b": "Liam TC",
       "games_a": 2,
       "games_b": 0
     },
@@ -1134,30 +1134,30 @@
       "week": 10,
       "round": 2,
       "player_a": "Stephen",
-      "player_b": "Dom",
+      "player_b": "Dom P",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 10,
       "round": 2,
-      "player_a": "Martin",
-      "player_b": "Brandon",
+      "player_a": "Martin R",
+      "player_b": "Brandon M",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 10,
       "round": 2,
-      "player_a": "Roland",
-      "player_b": "Georgia",
+      "player_a": "Roland K",
+      "player_b": "Georgia CB",
       "games_a": 2,
       "games_b": 1
     },
     {
       "week": 10,
       "round": 2,
-      "player_a": "Alex",
+      "player_a": "Alex D",
       "player_b": null,
       "games_a": 2,
       "games_b": 0
@@ -1173,31 +1173,31 @@
     {
       "week": 10,
       "round": 3,
-      "player_a": "Alex",
-      "player_b": "Brandon",
+      "player_a": "Alex D",
+      "player_b": "Brandon M",
       "games_a": 2,
       "games_b": 0
     },
     {
       "week": 10,
       "round": 3,
-      "player_a": "Dom",
-      "player_b": "Roland",
+      "player_a": "Dom P",
+      "player_b": "Roland K",
       "games_a": 2,
       "games_b": 0
     },
     {
       "week": 10,
       "round": 3,
-      "player_a": "Martin",
-      "player_b": "Liam",
+      "player_a": "Martin R",
+      "player_b": "Liam TC",
       "games_a": 1,
       "games_b": 2
     },
     {
       "week": 10,
       "round": 3,
-      "player_a": "Georgia",
+      "player_a": "Georgia CB",
       "player_b": null,
       "games_a": 2,
       "games_b": 0
@@ -1205,26 +1205,26 @@
   ],
   "playoffs": {
     "semifinal_1": {
-      "player_a": "Dom",
+      "player_a": "Dom P",
       "player_b": "Sami",
       "games_a": 1,
       "games_b": 2
     },
     "semifinal_2": {
-      "player_a": "Alex",
-      "player_b": "Roland",
+      "player_a": "Alex D",
+      "player_b": "Roland K",
       "games_a": 2,
       "games_b": 0
     },
     "final": {
       "player_a": "Sami",
-      "player_b": "Alex",
+      "player_b": "Alex D",
       "games_a": 2,
       "games_b": 0
     },
     "third_place": {
-      "player_a": "Dom",
-      "player_b": "Roland",
+      "player_a": "Dom P",
+      "player_b": "Roland K",
       "games_a": 1,
       "games_b": 2
     }
