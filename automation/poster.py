@@ -33,12 +33,13 @@ EMOJI_STRIKE = 160  # only certain sizes load; 160 is the largest usable strike
 
 # ---- Colours -------------------------------------------------------------
 WHITE = (255, 255, 255)
-INK = (12, 12, 12)
-DECK_GREY = (68, 68, 68)
-HEADER_GREY = (12, 12, 12)
-UP_GREEN = (66, 148, 66)
-DOWN_RED = (176, 48, 28)
+INK = (0, 0, 0)
+DECK_INK = (0, 0, 0)
+HEADER_GREY = (0, 0, 0)
+UP_GREEN = (48, 111, 29)
+DOWN_RED = (166, 43, 23)
 GOLD = (201, 155, 56)
+BAR_BORDER = (177, 189, 198)
 
 # Canvas (A4 portrait-ish, matches reference 1190x1683)
 W, H = 1190, 1683
@@ -102,9 +103,16 @@ def undefeated_players(stats):
     return out
 
 
+def draw_ink_centered(draw, x, cy, text, font, fill, ha="l"):
+    """Draw text with its visual (ink) center at y=cy, so numbers line up with
+    geometric shapes like the movement triangle regardless of font metrics."""
+    l, t, r, b = draw.textbbox((0, 0), text, font=font, anchor=ha + "a")
+    draw.text((x, cy - (t + b) / 2), text, font=font, fill=fill, anchor=ha + "a")
+
+
 def draw_triangle(draw, cx, cy, size, color, up=True):
     h = size
-    w = size * 1.1
+    w = size * 1.3
     if up:
         pts = [(cx, cy - h / 2), (cx - w / 2, cy + h / 2), (cx + w / 2, cy + h / 2)]
     else:
@@ -147,102 +155,142 @@ def render(league_id, week=None, final=False, out=None, title=None, champion=Non
     if title is None:
         title = f"{display} League" if final else f"{display} League: {week}/{total_weeks}"
 
-    # ---- Canvas + gradient bar ------------------------------------------
+    # ---- Canvas + rounded gradient banner -------------------------------
     img = Image.new("RGB", (W, H), WHITE)
-    draw = ImageDraw.Draw(img)
-    bar_w = int(W * 0.082)
+    bar_w = int(W * 0.207)       # ~246px wide banner
+    radius = int(W * 0.101)      # ~120px corner radius (top-right, bottom-right)
     top = theme["bar_top"]
     bot = theme["bar_bottom"]
+
+    gradient = Image.new("RGB", (bar_w, H))
+    gpx = gradient.load()
     for y in range(H):
         t = y / (H - 1)
         col = tuple(int(top[i] + (bot[i] - top[i]) * t) for i in range(3))
-        draw.line([(0, y), (bar_w, y)], fill=col)
+        for x in range(bar_w):
+            gpx[x, y] = col
 
-    # Rotated title in the bar
-    title_fs = int(bar_w * 0.52)
+    # Masks: outer = full rounded shape; inner inset 2px on the right/curved
+    # side only (left/top/bottom stay flush to the page edge) so the thin grey
+    # border appears only along the right edge and the two rounded corners.
+    corners = (False, True, True, False)  # tl, tr, br, bl
+    mask_outer = Image.new("L", (bar_w, H), 0)
+    ImageDraw.Draw(mask_outer).rounded_rectangle(
+        (0, 0, bar_w - 1, H - 1), radius=radius, corners=corners, fill=255)
+    mask_inner = Image.new("L", (bar_w, H), 0)
+    ImageDraw.Draw(mask_inner).rounded_rectangle(
+        (0, 0, bar_w - 3, H - 1), radius=radius - 2, corners=corners, fill=255)
+
+    img.paste(Image.new("RGB", (bar_w, H), BAR_BORDER), (0, 0), mask_outer)
+    img.paste(gradient, (0, 0), mask_inner)
+    draw = ImageDraw.Draw(img)
+
+    # Rotated title: UPPERCASE so all letters render at uniform cap height
+    # (mixed case in the small-caps font makes initials tower as full caps).
+    title_fs = int(bar_w * 0.40)   # cap height ~79 to match reference
     tf = ImageFont.truetype(BELEREN_SC, title_fs)
-    tw = draw.textlength(title, font=tf)
-    tmp = Image.new("RGBA", (int(tw) + 20, title_fs + 30), (0, 0, 0, 0))
-    ImageDraw.Draw(tmp).text((10, 10), title, font=tf, fill=WHITE)
+    ttext = title.upper()
+    tmp = Image.new("RGBA", (int(draw.textlength(ttext, font=tf)) + 40, int(title_fs * 1.6)), (0, 0, 0, 0))
+    ImageDraw.Draw(tmp).text((20, int(title_fs * 0.3)), ttext, font=tf, fill=WHITE)
+    tmp = tmp.crop(tmp.getbbox())  # tight crop
+    # Reference letters are condensed (~0.845 of natural width) — squash to match.
+    tmp = tmp.resize((int(tmp.width * 0.845), tmp.height), Image.LANCZOS)
     tmp = tmp.rotate(90, expand=True)
     img.paste(tmp, (int((bar_w - tmp.width) / 2), int((H - tmp.height) / 2)), tmp)
 
-    # ---- Layout ----------------------------------------------------------
-    content_left = bar_w + 40
-    pts_right = W - 55
-    move_x = content_left + 30       # arrow centre
-    move_num_x = content_left + 58   # movement number (left-anchored)
-    pos_x = content_left + 140       # position number (right-anchored)
-    name_x = content_left + 220      # player name (left-anchored)
+    # ---- Layout (absolute anchors measured from the reference poster) ----
+    move_x = int(W * 0.302)      # movement arrow centre (~360)
+    move_num_x = int(W * 0.322)  # movement number, left-anchored (~383)
+    pos_x = int(W * 0.398)       # position number, left-anchored (~474)
+    name_x = int(W * 0.483)      # player name, left-anchored (~575)
+    pts_right = int(W * 0.846)   # points, right-anchored (~1006)
 
-    top_pad = 150
-    bottom_pad = 45
+    # Row geometry measured from the reference: first row centre at 0.112*H,
+    # row pitch 0.05447*H (~91.7px). Compress the pitch if the roster exceeds
+    # what fits, so everyone is still included.
     n_rows = len(order)
-    row_h = (H - top_pad - bottom_pad) / n_rows
+    first_center = H * 0.112
+    bottom_pad = H * 0.027
+    row_h = min(H * 0.05447, (H - bottom_pad - first_center) / max(1, n_rows - 0.5))
 
-    # Header (Beleren bold, black, mixed case)
-    hf = ImageFont.truetype(BELEREN_BOLD, max(15, int(row_h * 0.24)))
-    hy = top_pad - int(row_h * 0.55)
-    draw.text((pos_x, hy), "Pos.", font=hf, fill=HEADER_GREY, anchor="rm")
-    draw.text((name_x, hy), "Player", font=hf, fill=HEADER_GREY, anchor="lm")
-    draw.text((pts_right, hy), "Pts.", font=hf, fill=HEADER_GREY, anchor="rm")
+    def cy_of(i):
+        return first_center + i * row_h
 
-    name_fs = max(16, int(row_h * 0.34))
-    deck_fs = max(12, int(row_h * 0.23))
-    num_fs = max(16, int(row_h * 0.36))
-    move_fs = max(11, int(row_h * 0.22))
+    name_fs = max(16, int(row_h * 0.40))
+    deck_fs = max(12, int(row_h * 0.32))
+    num_fs = max(16, int(row_h * 0.42))
     nf = ImageFont.truetype(BELEREN_BOLD, name_fs)
     nf_gold = nf
     df = ImageFont.truetype(MPLANTIN, deck_fs)
     numf = ImageFont.truetype(BELEREN_BOLD, num_fs)
-    mf = ImageFont.truetype(BELEREN_BOLD, move_fs)
+    hf = ImageFont.truetype(BELEREN_BOLD, max(15, int(row_h * 0.26)))
+    arrow_sz = int(num_fs * 0.70)      # triangle height (~26)
+    trophy_px = int(name_fs * 0.82)    # ~30
+    crown_px = int(name_fs * 0.55)     # ~20 (smaller than the trophy)
+
+    # Vertical offsets from the row centre line (cy), measured from reference.
+    # Numbers are ink-centred on cy. The name baseline sits ~4px above cy so its
+    # cap-top matches the reference; the trophy is tied to the name's cap-centre
+    # (below) so the two never drift apart. Crown is centred on cy (== the
+    # position number's centre).
+    baseline_off = -row_h * 0.045      # name baseline just above cy
+    deck_gap = row_h * 0.45            # deck baseline below the NAME baseline
+                                       # (tied to the name, not cy, so the
+                                       # name->deck gap stays tighter than the
+                                       # gap to the next player's name)
+    # cap height of the name font, for centring the trophy on the name's caps
+    name_cap_h = -draw.textbbox((0, 0), "H", font=nf, anchor="ls")[1]
+
+    # Header, ink-centered ~0.75 rows above the first row
+    hy = first_center - row_h * 0.75
+    draw_ink_centered(draw, pos_x, hy, "Pos.", hf, HEADER_GREY, ha="l")
+    draw_ink_centered(draw, name_x, hy, "Player", hf, HEADER_GREY, ha="l")
+    draw_ink_centered(draw, pts_right, hy, "Pts.", hf, HEADER_GREY, ha="r")
 
     for i, p in enumerate(order):
-        row_top = top_pad + i * row_h
-        cy = row_top + row_h / 2
+        cy = cy_of(i)
         pos = i + 1
 
-        # Movement arrow vs previous week
+        # Movement triangle (centred on cy) + number (ink-centred on cy so it
+        # lines up with the triangle)
         if p in prev_pos:
             delta = prev_pos[p] - i  # positive => moved up
-            if delta > 0:
-                draw_triangle(draw, move_x, cy, int(move_fs * 0.9), UP_GREEN, up=True)
-                draw.text((move_num_x, cy), str(delta), font=mf, fill=UP_GREEN, anchor="lm")
-            elif delta < 0:
-                draw_triangle(draw, move_x, cy, int(move_fs * 0.9), DOWN_RED, up=False)
-                draw.text((move_num_x, cy), str(-delta), font=mf, fill=DOWN_RED, anchor="lm")
+            if delta != 0:
+                col = UP_GREEN if delta > 0 else DOWN_RED
+                draw_triangle(draw, move_x, cy, arrow_sz, col, up=delta > 0)
+                draw_ink_centered(draw, move_num_x, cy, str(abs(delta)), numf, col, ha="l")
 
-        # Position number
-        draw.text((pos_x, cy), str(pos), font=numf, fill=INK, anchor="rm")
+        # Position number (ink-centred on cy)
+        draw_ink_centered(draw, pos_x, cy, str(pos), numf, INK, ha="l")
 
         name = disp[p]
         name_col = GOLD if p == gold_name_player else INK
-        name_y = cy - row_h * 0.16
-        deck_y = cy + row_h * 0.22
-        icon_px = int(name_fs * 1.05)
+        base_y = cy + baseline_off
+        cap_center = base_y - name_cap_h / 2   # vertical centre of the name's caps
 
-        # Crown sits centered in the gutter between the position number and name
+        # Crown: small, right edge ~30px before the name, centred on cy (the
+        # position number's centre)
         if p == crown_player:
-            em = _emoji_image("👑", int(icon_px * 0.92))
-            gutter_cx = (pos_x + name_x) / 2
-            img.paste(em, (int(gutter_cx - em.width / 2), int(cy - em.height / 2)), em)
+            em = _emoji_image("👑", crown_px)
+            img.paste(em, (int(name_x - 30 - em.width), int(cy - em.height / 2)), em)
 
-        # Player name (gold if final champion)
-        draw.text((name_x, name_y), name, font=nf_gold, fill=name_col, anchor="lm")
+        # Player name
+        draw.text((name_x, base_y), name, font=nf_gold, fill=name_col, anchor="ls")
 
-        # Trophy sits inline, just after the name
+        # Trophy: inline after the name, centred on the name's caps
         if p in trophies:
             nw = draw.textlength(name, font=nf)
-            em = _emoji_image("🏆", icon_px)
-            img.paste(em, (int(name_x + nw + 12), int(name_y - icon_px / 2)), em)
+            em = _emoji_image("🏆", trophy_px)
+            img.paste(em, (int(name_x + nw + 10), int(cap_center - em.height / 2)), em)
 
-        draw.text((name_x, deck_y), decks.get(p, ""), font=df, fill=DECK_GREY, anchor="lm")
+        # Deck subtitle, a fixed gap below the name's baseline
+        draw.text((name_x, base_y + deck_gap), decks.get(p, ""), font=df, fill=DECK_INK, anchor="ls")
 
-        # Points (best-N; final => most-total player shows total in gold)
+        # Points (ink-centred on cy); final => most-total player shows total gold
         if p == gold_pts_player:
-            draw.text((pts_right, cy), str(totals[p]), font=numf, fill=GOLD, anchor="rm")
+            draw_ink_centered(draw, pts_right, cy, str(totals[p]), numf, GOLD, ha="r")
         else:
-            draw.text((pts_right, cy), str(best7[p]), font=numf, fill=INK, anchor="rm")
+            draw_ink_centered(draw, pts_right, cy, str(best7[p]), numf, INK, ha="r")
 
     if out is None:
         out = os.path.join("/tmp", f"{league_id}-week{week:02d}.png")

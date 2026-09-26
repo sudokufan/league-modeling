@@ -11,6 +11,7 @@ All scoring reuses `simulate.py`, so the poster always agrees with the dashboard
 Paths (repo root = `/Users/home/Documents/league-modeling`):
 
 - Poster renderer: `automation/poster.py` (run with `.venv/bin/python`)
+- Poster verify: `automation/verify_poster.py` (regression check vs reference metrics)
 - Match ingest: `automation/add_matches.py`
 - Delivery: `automation/deliver.py`
 - Data: `automation/decks.json`, `automation/name_map.json`, `automation/automation_config.json`
@@ -18,22 +19,23 @@ Paths (repo root = `/Users/home/Documents/league-modeling`):
 
 ## Where this runs (trigger & context)
 
-This skill only works inside a **Claude Code session running on the Mac in this
-repo** — that's where the scripts, fonts, and data live. The plain Claude iOS/web
-chat is NOT Claude Code and cannot see any of this.
+This skill runs inside a **Claude Code session on the Mac in this repo** — that's
+where the scripts, fonts, and data live. Plain Claude iOS/web chat is NOT Claude
+Code and cannot see any of this.
 
-The intended flow: the user drives a Claude Code session on the Mac **from their
-phone via Remote Control**, coming home from the store, and attaches the EventLink
-photos there. Images attached in that session are readable directly. Saying "here
-are this week's photos" is enough to trigger this skill — no slash command needed.
+Two working trigger flows (either is fine):
 
-Requirements for it to work when triggered remotely:
+- **Remote Control (phone):** the user drives this Mac session from the Claude
+  phone app and attaches the EventLink photos there; images attached in the
+  remote session are readable directly. Requires the Mac on/awake and Full Disk
+  Access. (This had an "unknown network error" for a while, then started working.)
+- **Desktop photos:** the user drops the week's photos on the **Desktop** (via
+  iCloud/Photos/AirDrop) and runs this from the Mac terminal. `~/Desktop` is
+  readable because the terminal has Full Disk Access (required — without it
+  `~/Desktop`/`~/Documents` are blocked, especially while locked).
 
-- The Mac must be **on and awake** (not asleep) with the Claude Code session reachable.
-- The Claude Code app needs **Full Disk Access** (System Settings → Privacy &
-  Security). Without it, `~/Documents` (this repo) becomes unreadable the moment the
-  Mac is **locked** — which is the normal remote-trigger state — and every step
-  fails. This is mandatory, not optional.
+Either way, order the rounds by photo capture time. Saying "here are this week's
+photos" is enough to trigger this skill — no slash command needed.
 
 ## Procedure
 
@@ -99,7 +101,11 @@ Final / season-complete poster (11th, after playoffs):
   player's total is auto-gold. Get the playoff winner from `playoffs` in the
   league JSON or ask the user.
 
-Then Read the output PNG to eyeball it before sending.
+Then verify it before sending — do NOT rely on eyeballing:
+`.venv/bin/python automation/verify_poster.py "<png>"`
+This measures banner geometry, title size, arrow/deck colours, and per-row
+element alignment against the reference design and prints PASS/FAIL. If anything
+FAILs, fix `poster.py` (or the theme) until it passes; only then deliver.
 
 ### 9. Deliver
 
