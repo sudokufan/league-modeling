@@ -1,0 +1,29 @@
+{
+  "delivery": {
+    "imessage_recipients": [
+      { "name": "Martin", "number": "+447403611477" }
+    ],
+    "return_in_chat": true,
+    "imessage_best_effort": true
+  },
+  "poster_output_dir": "~/Library/Mobile Documents/com~apple~CloudDocs/M/Magic/League/Standard",
+  "poster_themes": {
+    "_default": {
+      "bar_top": [10, 22, 40],
+      "bar_bottom": [120, 175, 215]
+    },
+    "2026-season-3": {
+      "display_name": "Reality Fracture",
+      "season_folder": "2026 3 Reality Fracture",
+      "reigning_champion": "Chris G",
+      "bar_top": [6, 12, 20],
+      "bar_bottom": [112, 170, 213]
+    },
+    "2026-season-2": {
+      "display_name": "Strixhaven",
+      "season_folder": "2026 2 Strixhaven",
+      "bar_top": [103, 173, 81],
+      "bar_bottom": [97, 179, 221]
+    }
+  }
+}

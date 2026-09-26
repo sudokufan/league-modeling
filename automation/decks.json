@@ -1,0 +1,21 @@
+{
+  "_comment": "Player (JSON short-name key) -> current deck. Sticky: only edit when a player swaps decks. Seeded from the Reality Fracture Week 2 poster.",
+  "decks": {
+    "Harry S": "Izzet Spellementals",
+    "Liam L": "Boros Dragons",
+    "Georgia CB": "Mardu Discard",
+    "Dom P": "Jund Biotech",
+    "Alex D": "Green Landfall",
+    "Liam TC": "Boros Aggro",
+    "Chris G": "Mardu Discard",
+    "Matt L": "Azorius Momo",
+    "Martin R": "Red Dragon Ponza",
+    "Rory H": "Rakdos Goblins",
+    "Roland K": "Four-Colour Control",
+    "Alex M": "Orzhov Lifegain",
+    "Stephen S": "Azorius Control",
+    "Brandon M": "Four-Colour Control",
+    "Derek C": "Boros Control",
+    "Ben J": "Jund Artifacts"
+  }
+}

@@ -11,3 +11,4 @@ league_dashboard.html
 
 # OS
 .DS_Store
+.venv/
