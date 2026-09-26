@@ -16,6 +16,25 @@ Paths (repo root = `/Users/home/Documents/league-modeling`):
 - Data: `automation/decks.json`, `automation/name_map.json`, `automation/automation_config.json`
 - League JSONs: `leagues/<id>.json`; active league id in `leagues_config.json`
 
+## Where this runs (trigger & context)
+
+This skill only works inside a **Claude Code session running on the Mac in this
+repo** — that's where the scripts, fonts, and data live. The plain Claude iOS/web
+chat is NOT Claude Code and cannot see any of this.
+
+The intended flow: the user drives a Claude Code session on the Mac **from their
+phone via Remote Control**, coming home from the store, and attaches the EventLink
+photos there. Images attached in that session are readable directly. Saying "here
+are this week's photos" is enough to trigger this skill — no slash command needed.
+
+Requirements for it to work when triggered remotely:
+
+- The Mac must be **on and awake** (not asleep) with the Claude Code session reachable.
+- The Claude Code app needs **Full Disk Access** (System Settings → Privacy &
+  Security). Without it, `~/Documents` (this repo) becomes unreadable the moment the
+  Mac is **locked** — which is the normal remote-trigger state — and every step
+  fails. This is mandatory, not optional.
+
 ## Procedure
 
 ### 1. Locate the photos
@@ -86,8 +105,10 @@ Then Read the output PNG to eyeball it before sending.
 
 - Always present the PNG in the chat (primary channel).
 - Best-effort text to Martin: `.venv/bin/python automation/deliver.py "<png>"`
-  (reads recipients from `automation_config.json`). This can fail if the Mac is
-  locked/asleep — that's fine; report success or failure but don't block on it.
+  (reads recipients from `automation_config.json`). Requires Messages.app signed
+  into iMessage and the terminal's **Automation → Messages** permission granted
+  (approved once while unlocked). May still fail when the Mac is locked/asleep —
+  that's fine; report success or failure but don't block on it.
 
 ### 10. Offer to commit
 
