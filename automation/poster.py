@@ -134,7 +134,14 @@ def render(league_id, week=None, final=False, out=None, title=None, champion=Non
     prev_order = None
     if week and week > 1:
         prev_order, _ = standings_order(raw, max_week=week - 1)
-    prev_pos = {p: i for i, p in enumerate(prev_order)} if prev_order else {}
+    # Only players who'd played before this week get a movement arrow, so a
+    # debut doesn't show as a climb from last place.
+    played_before = {
+        p for m in raw["matches"] if m["week"] < (week or 0)
+        for p in (m["player_a"], m.get("player_b")) if p
+    }
+    prev_pos = ({p: i for i, p in enumerate(prev_order) if p in played_before}
+                if prev_order else {})
 
     ws = stats["weekly_scores"]
     n = stats["best_of_n"]
