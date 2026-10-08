@@ -8,7 +8,7 @@ description: Record a week of MTG league results from EventLink round photos and
 Turn EventLink round photos into updated JSON + a standings poster, then deliver it.
 All scoring reuses `simulate.py`, so the poster always agrees with the dashboard.
 
-Paths (repo root = `/Users/home/Documents/league-modeling`):
+Paths (repo root = `/Users/home/Code/league-modeling`):
 
 - Poster renderer: `automation/poster.py` (run with `.venv/bin/python`)
 - Poster verify: `automation/verify_poster.py` (regression check vs reference metrics)
